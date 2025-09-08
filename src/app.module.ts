@@ -12,9 +12,10 @@ import { ProfileModule } from './modules/profile/profile.module';
 import { TipsModule } from './modules/tips/tips.module';
 import { UsersModule } from './modules/users/users.module';
 import { VitalsModule } from './modules/vitals/vitals.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
-  imports: [ChatModule, ConversationsModule, DeviceIntegrationModule, LabReportsModule, MealsModule, NotificationsModule, ProfileModule, TipsModule, UsersModule, VitalsModule],
+  imports: [ChatModule, AuthModule, ConversationsModule, DeviceIntegrationModule, LabReportsModule, MealsModule, NotificationsModule, ProfileModule, TipsModule, UsersModule, VitalsModule],
   controllers: [ConversationsController],
   providers: [ConversationsService],
 })
