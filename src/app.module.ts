@@ -8,6 +8,7 @@ import { LabReportsModule } from './modules/lab-reports/lab-reports.module';
 import { MealsModule } from './modules/meals/meals.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ProfileModule } from './modules/profile/profile.module';
+
 import { TipsModule } from './modules/tips/tips.module';
 import { UsersModule } from './modules/users/users.module';
 import { VitalsModule } from './modules/vitals/vitals.module';
