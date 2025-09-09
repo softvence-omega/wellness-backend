@@ -6,6 +6,11 @@ import { LoginUserDto } from './dto/login-user.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { MailService } from '../email/email.service';
 import { Language } from '@prisma/client';
+import axios from 'axios';
+import * as jwt from 'jsonwebtoken';
+import * as fs from 'fs';
+import * as path from 'path';
+import jwkToPem from 'jwk-to-pem';
 
 @Injectable()
 export class AuthService {
@@ -136,4 +141,90 @@ export class AuthService {
 
         return
     }
+
+    // ---------------- APPLE MOBILE LOGIN ----------------
+    async appleMobileLogin(code: string) {
+        // 1️⃣ Generate Apple client secret
+        const clientSecret = this.generateAppleClientSecret();
+
+        // 2️⃣ Exchange code for tokens
+        const params = new URLSearchParams({
+            grant_type: 'authorization_code',
+            code,
+            client_id: process.env.APPLE_CLIENT_ID as string,
+            client_secret: clientSecret as string,
+        });
+
+
+        const resp = await axios.post('https://appleid.apple.com/auth/token', params.toString(), {
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        });
+
+        const { id_token } = resp.data;
+        if (!id_token) throw new UnauthorizedException('Apple login failed');
+
+        // 3️⃣ Verify & decode Apple ID token
+        const appleUser = await this.verifyAppleIdToken(id_token);
+
+        // 4️⃣ Find or create user
+        let user = await this.prisma.user.findUnique({ where: { email: appleUser.email } });
+
+        if (!user) {
+            user = await this.prisma.user.create({
+                data: {
+                    email: appleUser.email,
+                    password: '', // Apple login users don't need password
+                    profile: { create: { fullName: appleUser.name || appleUser.email.split('@')[0] } },
+                    isAgreeTerms: true,
+                    isEnableNotification: true,
+                },
+                include: { profile: true },
+            });
+        }
+
+        // 5️⃣ Issue your app JWT
+        return this.generateToken(user.id, user.email, user.role);
+    }
+
+    private generateAppleClientSecret() {
+        const privateKey = fs.readFileSync(path.resolve(process.env.APPLE_PRIVATE_KEY_PATH as string)).toString();
+
+        const claims = {
+            iss: process.env.APPLE_TEAM_ID,
+            iat: Math.floor(Date.now() / 1000),
+            exp: Math.floor(Date.now() / 1000) + 15777000, // up to 6 months
+            aud: 'https://appleid.apple.com',
+            sub: process.env.APPLE_CLIENT_ID,
+        };
+
+        return jwt.sign(claims, privateKey, {
+            algorithm: 'ES256',
+            header: {
+                alg: 'ES256', // explicitly required
+                kid: process.env.APPLE_KEY_ID as string,
+            },
+        });
+    }
+
+    private async verifyAppleIdToken(idToken: string) {
+        const decodedHeader: any = jwt.decode(idToken, { complete: true })?.header;
+        if (!decodedHeader || !decodedHeader.kid) {
+            throw new UnauthorizedException('Invalid id_token');
+        }
+
+        const jwksResp = await axios.get('https://appleid.apple.com/auth/keys');
+        const jwk = jwksResp.data.keys.find((k: any) => k.kid === decodedHeader.kid);
+        if (!jwk) throw new UnauthorizedException('Invalid Apple public key');
+
+        const pem = jwkToPem(jwk);
+        const payload: any = jwt.verify(idToken, pem, { algorithms: ['RS256'] });
+
+        return {
+            email: payload.email,
+            emailVerified: payload.email_verified,
+            appleId: payload.sub,
+            name: payload.name, // may not always be present
+        };
+    }
+
 }

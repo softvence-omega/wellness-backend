@@ -50,4 +50,10 @@ export class AuthController {
 
         return { accessToken: token.accessToken };
     }
+
+    @Post('apple-mobile-login')
+    async appleMobileLogin(@Body('code') code: string) {
+        const token = await this.authService.appleMobileLogin(code);
+        return { accessToken: token.accessToken };
+    }
 }

@@ -6,9 +6,9 @@ export class GoogleService {
   private clientId: string;
 
   constructor() {
-    this.clientId = process.env.GOOGLE_MOBILE_CLIENT_ID!;
+    this.clientId = process.env.GOOGLE_CLIENT_ID!;
     if (!this.clientId) {
-      throw new Error('GOOGLE_MOBILE_CLIENT_ID is not set in env');
+      throw new Error('GOOGLE_CLIENT_ID is not set in env');
     }
   }
 
