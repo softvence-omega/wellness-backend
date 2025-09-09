@@ -18,7 +18,7 @@ datasource db {
 model User {
   id               Int       @id @default(autoincrement())
   email            String    @unique
-  role             Role      @default(User)
+  role             Role      @default(USER)
   phone            String?   @unique
   password         String
   isEnableNotification  Boolean?   @default(false)
@@ -261,6 +261,6 @@ enum RiskLevel {
 }
 
 enum Role {
-  User
+  USER
   ADMIN
 }

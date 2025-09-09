@@ -19,7 +19,7 @@ import { ConfigModule } from '@nestjs/config';
 @Module({
   imports: [ ConfigModule.forRoot({
       isGlobal: true, // 👈 makes ConfigService available everywhere
-    }), ChatModule, AuthModule, ConversationsModule, DeviceIntegrationModule, LabReportsModule, MealsModule, NotificationsModule, ProfileModule, TipsModule, UsersModule, VitalsModule],
+    }), ChatModule,AuthModule, ConversationsModule, DeviceIntegrationModule, LabReportsModule, MealsModule, NotificationsModule, ProfileModule, TipsModule, UsersModule, VitalsModule],
   controllers: [ConversationsController],
   providers: [ConversationsService, GoogleService],
 })
