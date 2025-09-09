@@ -12,7 +12,8 @@ export class AuthService {
     constructor(
         private prisma: PrismaService,
         private jwtService: JwtService,
-        private mailService: MailService
+        private mailService: MailService,
+
 
     ) { }
 
@@ -34,7 +35,7 @@ export class AuthService {
                         fullName: dto.fullName,
                     },
                 },
-                language:dto.language as Language | undefined,
+                language: dto.language as Language | undefined,
                 isAgreeTerms: dto.isAgreeTerms,
                 isEnableNotification: dto.isEnableNotification ?? false,
             },
@@ -48,6 +49,28 @@ export class AuthService {
         const { password, ...result } = user;
         return result;
     }
+
+    async googleMobileLogin(googleUser: { email: string; name?: string; picture?: string }) {
+        let user = await this.prisma.user.findUnique({ where: { email: googleUser.email } });
+
+        if (!user) {
+            user = await this.prisma.user.create({
+                data: {
+                    email: googleUser.email,
+                    password: '', // no password for Google users
+                    profile: { create: { fullName: googleUser.name || googleUser.email.split('@')[0] } },
+                    isAgreeTerms: true,
+                    isEnableNotification: true,
+                },
+                include: { profile: true },
+            });
+        }
+
+        return this.generateToken(user.id, user.email, user.role);
+    }
+
+
+
 
     // ---------------- LOGIN ----------------
     async login(dto: LoginUserDto) {

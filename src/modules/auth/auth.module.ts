@@ -8,13 +8,15 @@ import { PrismaModule } from 'src/prisma/prisma.module';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { MailModule } from '../email/email.module';
 import { MailService } from '../email/email.service';
+import { ConfigModule } from '@nestjs/config';
+import { GoogleService } from '../google/google.service';
 
 @Module({
   imports: [
- 
+    ConfigModule,
     PassportModule,
-       PrismaModule,
-       MailModule,
+    PrismaModule,
+    MailModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'secretKey',
       signOptions: { expiresIn: '1d' },
@@ -22,7 +24,7 @@ import { MailService } from '../email/email.service';
 
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, PrismaService, MailService],
+  providers: [AuthService, JwtStrategy, GoogleService, PrismaService, MailService],
   exports: [AuthService],
 })
-export class AuthModule {}
+export class AuthModule { }

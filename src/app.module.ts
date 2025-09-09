@@ -13,10 +13,14 @@ import { TipsModule } from './modules/tips/tips.module';
 import { UsersModule } from './modules/users/users.module';
 import { VitalsModule } from './modules/vitals/vitals.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { GoogleService } from './modules/google/google.service';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [ChatModule, AuthModule, ConversationsModule, DeviceIntegrationModule, LabReportsModule, MealsModule, NotificationsModule, ProfileModule, TipsModule, UsersModule, VitalsModule],
+  imports: [ ConfigModule.forRoot({
+      isGlobal: true, // 👈 makes ConfigService available everywhere
+    }), ChatModule, AuthModule, ConversationsModule, DeviceIntegrationModule, LabReportsModule, MealsModule, NotificationsModule, ProfileModule, TipsModule, UsersModule, VitalsModule],
   controllers: [ConversationsController],
-  providers: [ConversationsService],
+  providers: [ConversationsService, GoogleService],
 })
 export class AppModule { }
