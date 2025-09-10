@@ -38,11 +38,12 @@ export class AuthService {
                 profile: {
                     create: {
                         fullName: dto.fullName,
+                        language: dto.language as Language | undefined,
+                        isEnableNotification: dto.isEnableNotification ?? false,
                     },
                 },
-                language: dto.language as Language | undefined,
+
                 isAgreeTerms: dto.isAgreeTerms,
-                isEnableNotification: dto.isEnableNotification ?? false,
             },
             include: {
                 profile: true,
@@ -63,9 +64,9 @@ export class AuthService {
                 data: {
                     email: googleUser.email,
                     password: '', // no password for Google users
-                    profile: { create: { fullName: googleUser.name || googleUser.email.split('@')[0] } },
+                    profile: { create: { fullName: googleUser.name || googleUser.email.split('@')[0], isEnableNotification: true, } },
                     isAgreeTerms: true,
-                    isEnableNotification: true,
+                    
                 },
                 include: { profile: true },
             });
@@ -174,9 +175,9 @@ export class AuthService {
                 data: {
                     email: appleUser.email,
                     password: '', // Apple login users don't need password
-                    profile: { create: { fullName: appleUser.name || appleUser.email.split('@')[0] } },
+                    profile: { create: { fullName: appleUser.name || appleUser.email.split('@')[0],  isEnableNotification: true, } },
                     isAgreeTerms: true,
-                    isEnableNotification: true,
+                   
                 },
                 include: { profile: true },
             });

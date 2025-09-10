@@ -1,12 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-  // output   = "../generated/prisma"
 }
 
 datasource db {
@@ -14,85 +7,81 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model User {
-  id               Int       @id @default(autoincrement())
-  email            String    @unique
-  role             Role      @default(USER)
-  phone            String?   @unique
-  password         String
-  isEnableNotification  Boolean?   @default(false)
-  isAgreeTerms     Boolean?   @default(false)
-  language         Language?  @default(EN)
-  otp              String?
-  otpExpiry        DateTime? // OTP expiration
-  isDeleted        Boolean   @default(false)
-  changePasswordAt DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime @updatedAt
+  id       Int     @id @default(autoincrement())
+  email    String  @unique
+  role     Role    @default(USER)
+  phone    String? @unique
+  password String
 
-  profile          Profile?
-  notification     Notification?
+  isAgreeTerms      Boolean?           @default(false)
+  otp               String?
+  otpExpiry         DateTime?
+  isDeleted         Boolean            @default(false)
+  changePasswordAt  DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  chats             Chat[]             @relation("ChatSender")
+  conversations     Conversation[]
   deviceIntegration DeviceIntegration?
-  nudges           Nudge[]
-  vitalSigns       VitalSigns[]
-  meals            Meal[]
-  labReports       LabReport[]
-  tips             Tip[]
-  conversations    Conversation[]
-  chats            Chat[]    @relation("ChatSender")
+  labReports        LabReport[]
+  meals             Meal[]
+  notification      Notification?
+  nudges            Nudge[]
+  profile           Profile?
+  tips              Tip[]
+  vitalSigns        VitalSigns?
 }
 
 model Profile {
-  id          Int      @id @default(autoincrement())
-  userId      Int      @unique
-  photo       String?
-  fullName    String?
-  dateOfBirth DateTime?
-  gender      Gender?
-  height      String?
-  weight      String?
-  healthGoal  HealthGoal?
-
-  user        User     @relation(fields: [userId], references: [id])
+  id                   Int         @id @default(autoincrement())
+  userId               Int         @unique
+  photo                String?
+  fullName             String?
+  isEnableNotification Boolean?    @default(false)
+  language             Language?   @default(EN)
+  dateOfBirth          DateTime?
+  gender               Gender?
+  height               String?
+  weight               String?
+  healthGoal           HealthGoal?
+  user                 User        @relation(fields: [userId], references: [id])
 }
 
 model Notification {
-  id                 Int     @id @default(autoincrement())
-  userId             Int     @unique
-  activityReminders  Boolean @default(false)
-  mealTracking       Boolean @default(false)
-  sleepInsights      Boolean @default(false)
-  progressUpdates    Boolean @default(false)
-  waterIntake        Boolean @default(false)
-  motivationalNudges Boolean @default(false)
-  wellnessTips       Boolean @default(false)
-  personalizedTips   Boolean @default(false)
-  systemAlerts       Boolean @default(false)
+  id                 Int       @id @default(autoincrement())
+  userId             Int       @unique
+  activityReminders  Boolean   @default(false)
+  mealTracking       Boolean   @default(false)
+  sleepInsights      Boolean   @default(false)
+  progressUpdates    Boolean   @default(false)
+  waterIntake        Boolean   @default(false)
+  motivationalNudges Boolean   @default(false)
+  wellnessTips       Boolean   @default(false)
+  personalizedTips   Boolean   @default(false)
+  systemAlerts       Boolean   @default(false)
   doNotDisturbStart  DateTime?
   doNotDisturbEnd    DateTime?
-
-  user User @relation(fields: [userId], references: [id])
+  user               User      @relation(fields: [userId], references: [id])
 }
 
 model DeviceIntegration {
-  id                     Int      @id @default(autoincrement())
-  userId                 Int      @unique
-  appleHealth_isConnected Boolean @default(false)
-  appleHealth_lastSync   DateTime?
-  googleFit_isConnected  Boolean @default(false)
-  googleFit_lastSync     DateTime?
-  fitbit_isConnected     Boolean @default(false)
-  fitbit_lastSync        DateTime?
-  strava_isConnected     Boolean @default(false)
-  strava_lastSync        DateTime?
-  auto_sync              DateTime?
-
-  user User @relation(fields: [userId], references: [id])
+  id                      Int       @id @default(autoincrement())
+  userId                  Int       @unique
+  appleHealth_isConnected Boolean   @default(false)
+  appleHealth_lastSync    DateTime?
+  googleFit_isConnected   Boolean   @default(false)
+  googleFit_lastSync      DateTime?
+  fitbit_isConnected      Boolean   @default(false)
+  fitbit_lastSync         DateTime?
+  strava_isConnected      Boolean   @default(false)
+  strava_lastSync         DateTime?
+  auto_sync               DateTime?
+  user                    User      @relation(fields: [userId], references: [id])
 }
 
 model Nudge {
-  id       Int    @id @default(autoincrement())
+  id       Int      @id @default(autoincrement())
   userId   Int
   title    String
   category String
@@ -100,111 +89,100 @@ model Nudge {
   unit     String
   time     DateTime
   schedule String
-
-  user User @relation(fields: [userId], references: [id])
-  tips Tip[]
+  user     User     @relation(fields: [userId], references: [id])
+  tips     Tip[]
 }
 
-
-
 model VitalSigns {
-  id       Int    @id @default(autoincrement())
-  userId   Int    @unique
-  dataFrom String
-
-  user       User               @relation(fields: [userId], references: [id])
-  heartRate  HeartRate?
-  step       Step?
-  sleep      Sleep?
+  id         Int                @id @default(autoincrement())
+  userId     Int                @unique
+  dataFrom   String
   additional AdditionalMetrics?
+  heartRate  HeartRate?
+  sleep      Sleep?
+  step       Step?
+  user       User               @relation(fields: [userId], references: [id])
 }
 
 model HeartRate {
-  id                     Int      @id @default(autoincrement())
-  vitalId                Int      @unique
+  id                     Int        @id @default(autoincrement())
+  vitalId                Int        @unique
   heartRate              Int?
   heartRateLastUpdatedAt DateTime
   resting                String?
   average                String?
   peak                   String?
   message                String?
-
-  vital VitalSigns @relation(fields: [vitalId], references: [id])
+  vital                  VitalSigns @relation(fields: [vitalId], references: [id])
 }
 
 model Step {
-  id         Int    @id @default(autoincrement())
-  vitalId    Int    @unique
+  id         Int        @id @default(autoincrement())
+  vitalId    Int        @unique
   stepsCount Int
   distance   Int
   calories   Int
   activeMin  Int
   message    String?
-
-  vital VitalSigns @relation(fields: [vitalId], references: [id])
+  vital      VitalSigns @relation(fields: [vitalId], references: [id])
 }
 
 model Sleep {
-  id           Int      @id @default(autoincrement())
-  vitalId      Int      @unique
+  id           Int        @id @default(autoincrement())
+  vitalId      Int        @unique
   sleepStartAt DateTime
   sleepEndAt   DateTime
   deep         String?
   rem          String?
   light        String?
   message      String?
-
-  vital VitalSigns @relation(fields: [vitalId], references: [id])
+  vital        VitalSigns @relation(fields: [vitalId], references: [id])
 }
 
 model AdditionalMetrics {
-  id                   Int @id @default(autoincrement())
-  vitalId              Int @unique
+  id                   Int        @id @default(autoincrement())
+  vitalId              Int        @unique
   heartRateVariability Int
   bodyTemp             Int
   respiratoryRate      Int
-
-  vital VitalSigns @relation(fields: [vitalId], references: [id])
+  vital                VitalSigns @relation(fields: [vitalId], references: [id])
 }
 
 model Meal {
-  id      Int    @id @default(autoincrement())
-  userId  Int
-  photo   String?
-  name    String
+  id       Int     @id @default(autoincrement())
+  userId   Int
+  photo    String?
+  name     String
   mealType String
-  note    String?
+  note     String?
   calories String?
-  protein String?
-  carbs   String?
-  fats    String?
-  time    String?
-
-  user User @relation(fields: [userId], references: [id])
+  protein  String?
+  carbs    String?
+  fats     String?
+  time     String?
+  user     User    @relation(fields: [userId], references: [id])
 }
 
 model LabReport {
-  id      Int    @id @default(autoincrement())
-  userId  Int
-  photo   String?
-
-  user User @relation(fields: [userId], references: [id])
-  tips Tip[]
+  id     Int     @id @default(autoincrement())
+  userId Int
+  photo  String?
+  user   User    @relation(fields: [userId], references: [id])
+  tips   Tip[]
 }
 
 model Tip {
-  id           Int      @id @default(autoincrement())
-  userId       Int
-  labReportId  Int?
-  nudgesId     Int?
-  type         TipType
-  message      String
-  riskLevel    RiskLevel
-  createdAt    DateTime @default(now())
-
-  user      User      @relation(fields: [userId], references: [id])
-  labReport LabReport? @relation(fields: [labReportId], references: [id])
-  nudges    Nudge?     @relation(fields: [nudgesId], references: [id])
+  id          Int        @id @default(autoincrement())
+  userId      Int
+  labReportId Int?
+  nudgesId    Int?
+  type        TipType
+  message     String
+  riskLevel   RiskLevel
+  createdAt   DateTime   @default(now())
+  labReport   LabReport? @relation(fields: [labReportId], references: [id])
+  nudges      Nudge?     @relation(fields: [nudgesId], references: [id])
+  user        User       @relation(fields: [userId], references: [id])
 }
 
 model Conversation {
@@ -213,22 +191,20 @@ model Conversation {
   userId    Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  user  User  @relation(fields: [userId], references: [id])
-  chats Chat[]
+  chats     Chat[]
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model Chat {
-  id              Int      @id @default(autoincrement())
-  conversationId  Int
-  senderId        Int
-  type            String
-  content         String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  conversation Conversation @relation(fields: [conversationId], references: [id])
-  sender       User         @relation("ChatSender", fields: [senderId], references: [id])
+  id             Int          @id @default(autoincrement())
+  conversationId Int
+  senderId       Int
+  type           String
+  content        String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  sender         User         @relation("ChatSender", fields: [senderId], references: [id])
 }
 
 enum Language {

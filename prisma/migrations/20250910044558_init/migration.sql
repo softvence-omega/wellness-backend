@@ -14,18 +14,18 @@ CREATE TYPE "public"."TipType" AS ENUM ('LAB_REPORT', 'NUDGES');
 CREATE TYPE "public"."RiskLevel" AS ENUM ('LOW', 'MEDIUM', 'HIGH');
 
 -- CreateEnum
-CREATE TYPE "public"."Role" AS ENUM ('User', 'ADMIN');
+CREATE TYPE "public"."Role" AS ENUM ('USER', 'ADMIN');
 
 -- CreateTable
 CREATE TABLE "public"."User" (
     "id" SERIAL NOT NULL,
     "email" TEXT NOT NULL,
-    "role" "public"."Role" NOT NULL DEFAULT 'User',
+    "role" "public"."Role" NOT NULL DEFAULT 'USER',
     "phone" TEXT,
     "password" TEXT NOT NULL,
     "isEnableNotification" BOOLEAN DEFAULT false,
     "isAgreeTerms" BOOLEAN DEFAULT false,
-    "language" "public"."Language",
+    "language" "public"."Language" DEFAULT 'EN',
     "otp" TEXT,
     "otpExpiry" TIMESTAMP(3),
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
@@ -290,13 +290,13 @@ ALTER TABLE "public"."Meal" ADD CONSTRAINT "Meal_userId_fkey" FOREIGN KEY ("user
 ALTER TABLE "public"."LabReport" ADD CONSTRAINT "LabReport_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Tip" ADD CONSTRAINT "Tip_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "public"."Tip" ADD CONSTRAINT "Tip_labReportId_fkey" FOREIGN KEY ("labReportId") REFERENCES "public"."LabReport"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Tip" ADD CONSTRAINT "Tip_nudgesId_fkey" FOREIGN KEY ("nudgesId") REFERENCES "public"."Nudge"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Tip" ADD CONSTRAINT "Tip_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Conversation" ADD CONSTRAINT "Conversation_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
