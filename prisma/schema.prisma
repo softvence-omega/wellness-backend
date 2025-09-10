@@ -60,6 +60,7 @@ model Notification {
   wellnessTips       Boolean   @default(false)
   personalizedTips   Boolean   @default(false)
   systemAlerts       Boolean   @default(false)
+  doNotDisturb       Boolean   @default(false)
   doNotDisturbStart  DateTime?
   doNotDisturbEnd    DateTime?
   user               User      @relation(fields: [userId], references: [id])
