@@ -8,29 +8,31 @@ datasource db {
 }
 
 model User {
-  id       Int     @id @default(autoincrement())
-  email    String  @unique
-  role     Role    @default(USER)
-  phone    String? @unique
-  password String
-
-  isAgreeTerms      Boolean?           @default(false)
-  otp               String?
-  otpExpiry         DateTime?
-  isDeleted         Boolean            @default(false)
-  changePasswordAt  DateTime?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  chats             Chat[]             @relation("ChatSender")
-  conversations     Conversation[]
-  deviceIntegration DeviceIntegration?
-  labReports        LabReport[]
-  meals             Meal[]
-  notification      Notification?
-  nudges            Nudge[]
-  profile           Profile?
-  tips              Tip[]
-  vitalSigns        VitalSigns?
+  id                      Int                @id @default(autoincrement())
+  email                   String             @unique
+  role                    Role               @default(USER)
+  phone                   String?            @unique
+  password                String
+  fitbitAccessToken       String?
+  fitbitRefreshToken      String?
+  fitbitAccessTokenExpiry DateTime?
+  isAgreeTerms            Boolean?           @default(false)
+  otp                     String?
+  otpExpiry               DateTime?
+  isDeleted               Boolean            @default(false)
+  changePasswordAt        DateTime?
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+  chats                   Chat[]             @relation("ChatSender")
+  conversations           Conversation[]
+  deviceIntegration       DeviceIntegration?
+  labReports              LabReport[]
+  meals                   Meal[]
+  notification            Notification?
+  nudges                  Nudge[]
+  profile                 Profile?
+  tips                    Tip[]
+  vitalSigns              VitalSigns?
 }
 
 model Profile {
