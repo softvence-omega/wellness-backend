@@ -1,57 +1,56 @@
-import { Controller, Get, Param, Query, Redirect } from '@nestjs/common';
-import { FitbitService, TokenData } from './fitbit.service';
+import { Controller, Get, Param, Query } from '@nestjs/common';
+import { FitbitService } from './fitbit.service';
 
 @Controller('fitbit')
 export class FitbitController {
   constructor(private readonly fitbitService: FitbitService) {}
 
-  // Redirect to Fitbit OAuth
+  // Connect Fitbit for a user (redirect URL with userId as state)
   @Get('connect/:userId')
-  @Redirect()
   connect(@Param('userId') userId: string) {
     const url = this.fitbitService.getAuthUrl(userId);
     return { url };
   }
 
-  // OAuth callback
+  // OAuth callback (Fitbit sends back code + state=userId)
   @Get('callback')
   async callback(@Query('code') code: string, @Query('state') userId: string) {
     return this.fitbitService.exchangeCodeForToken(code, userId);
   }
 
   // Get Fitbit profile
-  @Get(':userId/profile')
+  @Get('profile/:userId')
   getProfile(@Param('userId') userId: string) {
     return this.fitbitService.getProfile(userId);
   }
 
-  @Get(':userId/devices')
+  @Get('devices/:userId')
   getDevices(@Param('userId') userId: string) {
     return this.fitbitService.getDevices(userId);
   }
 
-  @Get(':userId/activity')
+  @Get('activity/:userId')
   getActivity(@Param('userId') userId: string, @Query('date') date?: string) {
     return this.fitbitService.getActivity(userId, date);
   }
 
-  @Get(':userId/heartrate')
+  @Get('heartrate/:userId')
   getHeartRate(@Param('userId') userId: string, @Query('date') date?: string) {
     return this.fitbitService.getHeartRate(userId, date);
   }
 
-  @Get(':userId/sleep')
+  @Get('sleep/:userId')
   getSleep(@Param('userId') userId: string, @Query('date') date?: string) {
     return this.fitbitService.getSleep(userId, date);
   }
 
-  @Get(':userId/weight')
+  @Get('weight/:userId')
   getWeight(@Param('userId') userId: string) {
     return this.fitbitService.getWeight(userId);
   }
 
-  @Get(':userId/connections')
-  getConnections(@Param('userId') userId: string): any {
+  @Get('connections/:userId')
+  getConnections(@Param('userId') userId: string) {
     return this.fitbitService.getConnections(userId);
   }
 }

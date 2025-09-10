@@ -87,8 +87,9 @@ export class FitbitService {
     return this.fetchFromFitbit(userId, 'https://api.fitbit.com/1/user/-/devices.json');
   }
 
-  async getActivity(userId: string, date: string = 'today') {
+  async getActivity(userId: string, date: string = '2025-09-10') {
     return this.fetchFromFitbit(userId, `https://api.fitbit.com/1/user/-/activities/date/${date}.json`);
+    
   }
 
   async getHeartRate(userId: string, date: string = 'today') {
