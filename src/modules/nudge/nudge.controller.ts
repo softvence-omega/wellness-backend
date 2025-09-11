@@ -69,7 +69,7 @@ export class NudgeController {
 
   // Delete Nudge
   @Roles('ADMIN', 'USER')
-  @Delete(':id')
+  @Put('delete-nudge/:id')
   async remove(@Req() req: any, @Param('id') id: string) {
     const userId = req.user.userId;
     const result = await this.nudgeService.remove(Number(id), userId);
