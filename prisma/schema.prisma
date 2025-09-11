@@ -202,7 +202,7 @@ model Chat {
   id             Int          @id @default(autoincrement())
   conversationId Int
   senderId       Int
-  type           String
+  type           MessageType
   content        String?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
@@ -221,6 +221,13 @@ enum Gender {
   OTHER
 }
 
+ enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  AUDIO
+  OTHER // For any future types
+}
 enum HealthGoal {
   LOSE_WEIGHT
   BUILD_MUSCLE

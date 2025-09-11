@@ -7,10 +7,11 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UpdateProfileDto } from './dto/user-update.dto';
 import { Prisma } from '@prisma/client';
+import { CloudinaryService } from 'src/common/cloudinary/cloudinary.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly cloudinary: CloudinaryService) { }
 
   // ✅ Update profile
   async profileUpdate(dto: UpdateProfileDto, userId: number) {
@@ -39,6 +40,36 @@ export class UsersService {
     return updateProfile;
   }
 
+ async uploadFile(file: Express.Multer.File, userId: number) {
+    let fileUrl = '';
+
+    //  Upload image to Cloudinary
+    if (file) {
+      const uploadResult = await this.cloudinary.uploadBuffer(
+        file.buffer,
+        'photo/fileUrl',
+        'image',
+      );
+      fileUrl = uploadResult.secure_url;
+    }
+
+    // ✅ Check if user exists
+    const isUserExist = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!isUserExist) throw new NotFoundException('User not found!');
+    if (isUserExist.isDeleted)
+      throw new NotFoundException('User already deleted!');
+
+    // ✅ Update profile photo
+    const updatedProfile = await this.prisma.profile.update({
+      where: { userId },
+      data: { photo: fileUrl },
+    });
+
+    return updatedProfile;
+  }
+
   // ✅ List all users
   async findAll(
     page = 1,
@@ -54,11 +85,11 @@ export class UsersService {
 
       const searchFilter: Prisma.UserWhereInput = searchTerm
         ? {
-            OR: [
-              { profile: { fullName: { contains: searchTerm, mode: Prisma.QueryMode.insensitive } } },
-              { email: { contains: searchTerm, mode: Prisma.QueryMode.insensitive } },
-            ],
-          }
+          OR: [
+            { profile: { fullName: { contains: searchTerm, mode: Prisma.QueryMode.insensitive } } },
+            { email: { contains: searchTerm, mode: Prisma.QueryMode.insensitive } },
+          ],
+        }
         : {};
 
       const where: Prisma.UserWhereInput = {
@@ -87,7 +118,7 @@ export class UsersService {
         },
       };
     } catch (error) {
-        console.log(error)
+      console.log(error)
       throw new InternalServerErrorException('Failed to fetch users.');
     }
   }
