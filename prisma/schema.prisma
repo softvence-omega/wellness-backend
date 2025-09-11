@@ -90,12 +90,12 @@ model Nudge {
   category     NudgeCategory
   targetAmount Float? // e.g., 8 for sleep hours, 8800 for steps, 2500 for hydration ml (daily target)
   unit         String? // e.g., "hours", "steps", "ml", "kg"
-  schedule     String? // e.g., "M,T,W,T,F,S,S" or cron-like for reminders
+  date         DateTime      @default(now())
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   isDeleted    Boolean       @default(false)
-  user User  @relation(fields: [userId], references: [id])
-  tips Tip[]
+  user         User          @relation(fields: [userId], references: [id])
+  tips         Tip[]
 }
 
 model VitalSigns {

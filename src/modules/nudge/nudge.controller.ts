@@ -25,7 +25,7 @@ export class NudgeController {
 
   // Create Nudge
   @Roles('ADMIN', 'USER')
-  @Post()
+  @Post('create-nudge')
   async create(@Req() req: any, @Body() dto: CreateNudgeDto) {
     const userId = req.user.userId;
     const result = await this.nudgeService.create(userId, dto);
@@ -34,7 +34,7 @@ export class NudgeController {
 
   // Get All Nudges (with pagination)
   @Roles('ADMIN', 'USER')
-  @Get()
+  @Get('get-all-nudge')
   async findAll(
     @Req() req: any,
     @Query('page') page = 1,
