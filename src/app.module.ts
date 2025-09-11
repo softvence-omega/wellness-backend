@@ -14,11 +14,12 @@ import { AuthModule } from './modules/auth/auth.module';
 import { GoogleService } from './modules/google/google.service';
 import { ConfigModule } from '@nestjs/config';
 import { FitbitModule } from './modules/fitbit/fitbit.module';
+import { NudgeModule } from './modules/nudge/nudge.module';
 
 @Module({
   imports: [ConfigModule.forRoot({
     isGlobal: true, // 👈 makes ConfigService available everywhere
-  }), ChatModule, AuthModule, DeviceIntegrationModule, LabReportsModule, MealsModule, NotificationsModule, ProfileModule, TipsModule, UsersModule, VitalsModule, FitbitModule],
+  }), ChatModule, AuthModule, DeviceIntegrationModule, LabReportsModule, MealsModule, NotificationsModule, ProfileModule, TipsModule, UsersModule, VitalsModule, FitbitModule, NudgeModule],
   controllers: [],
   providers: [GoogleService],
 })
