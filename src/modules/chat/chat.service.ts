@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateConversationDto } from './dto/create-conversation.dto';
 import { CreateChatDto } from './dto/create-chat.dto';
@@ -121,6 +121,36 @@ export class ChatService {
                 lastPage: Math.ceil(total / limit)
             }
         }
+    }
+    // Delete a conversation and all its chats
+    async deleteConversationWithChats(conversationId: number, userId: number) {
+        // 1. check if the conversation exists and belongs to the user
+        const conv = await this.prisma.conversation.findUnique({
+            where: {
+                id: conversationId
+            }
+        })
+
+
+        if (!conv) throw new NotFoundException('Conversation not found');
+        if (conv.userId !== userId) throw new ForbiddenException('Not allowed to delete conversation')
+
+        // 2. Delete all related chats first
+
+        await this.prisma.chat.deleteMany({
+            where: {
+                conversationId
+            }
+        })
+
+        // 3. Delete the conversation itself
+        await this.prisma.conversation.delete({
+            where: { id: conversationId },
+        });
+
+
+        return;
+
     }
 
 

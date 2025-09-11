@@ -53,7 +53,25 @@ export class ChatController {
         return successResponse(result, 'Message sent successfully');
     }
 
+@Roles('ADMIN', 'USER')
+@Post('delete-conversation-with-chats')
+async deleteConversationWithChat(
+  @Req() req: any,
+  @Body('conversationId') conversationId: string, // only need ID from body
+) {
+  const userId = req.user.userId;
+
+  const result = await this.chatService.deleteConversationWithChats(
+    Number(conversationId),
+    Number(userId),
+  );
+
+  return successResponse(result, 'Conversation deleted successfully');
+}
+
+
     // Get all messages of a conversation
+    @Roles('ADMIN', 'USER')
     @Get('messages/:conversationId')
     async getChats(
         @Param('conversationId') conversationId: string,
