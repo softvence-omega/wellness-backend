@@ -250,3 +250,19 @@ enum Role {
   USER
   ADMIN
 }
+
+enum NudgeCategory {
+  HYDRATION
+  SLEEP
+  MOVEMENT
+  WEIGHT
+  OTHER
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK
+  OTHER
+}
