@@ -9,15 +9,12 @@ export class CreateNudgeDto {
   @IsEnum(NudgeCategory)
   category: NudgeCategory;
 
-  @IsOptional()
   @IsNumber()
-  targetAmount?: number;
+  targetAmount: number;
 
-  @IsOptional()
   @IsString()
-  unit?: string;
+  unit: string;
 
-  @IsOptional()
   @IsString()
-  schedule?: string;
+  schedule: string;
 }
