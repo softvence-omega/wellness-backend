@@ -19,13 +19,19 @@ export class ChatService {
     }
 
     //List all conversation for a user
-    async getConversations(userId: number, page = 1, limit = 20) {
-        const skip = (page - 1) * limit;
+    async getConversations(userId: number, page = 1, limit = 20, searchTerm?: string) {
+        //Build search filter
+
+        const where: any = { userId };
+        if (searchTerm && searchTerm.trim() != '') {
+            where.title = {
+                contains: searchTerm,
+                mode: 'insensitive'
+            }
+        }
         // Fetch conversations with the latest chat included
         const conversations = await this.prisma.conversation.findMany({
-            where: {
-                userId,
-            },
+            where,
             orderBy: {
                 updatedAt: 'desc',
             },

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Query, Req, UseGuards } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { CreateConversationDto } from './dto/create-conversation.dto';
 import { CreateChatDto } from './dto/create-chat.dto';
@@ -33,12 +33,14 @@ export class ChatController {
         @Req() req: any,
         @Query('page') page = 1,
         @Query('limit') limit = 20,
+        @Query('searchTerm') searchTerm : string
     ) {
         const userId = req.user.userId
         const result = await this.chatService.getConversations(
             Number(userId),
             Number(page),
             Number(limit),
+            searchTerm
         );
         return successResponse(result, 'Conversations fetched successfully');
     }
@@ -53,21 +55,21 @@ export class ChatController {
         return successResponse(result, 'Message sent successfully');
     }
 
-@Roles('ADMIN', 'USER')
-@Post('delete-conversation-with-chats')
-async deleteConversationWithChat(
-  @Req() req: any,
-  @Body('conversationId') conversationId: string, // only need ID from body
-) {
-  const userId = req.user.userId;
+    @Roles('ADMIN', 'USER')
+    @Put('delete-conversation-with-chats/:conversationId')
+    async deleteConversationWithChat(
+        @Req() req: any,
+        @Param('conversationId') conversationId: string, // only need ID from body
+    ) {
+        const userId = req.user.userId;
 
-  const result = await this.chatService.deleteConversationWithChats(
-    Number(conversationId),
-    Number(userId),
-  );
+        const result = await this.chatService.deleteConversationWithChats(
+            Number(conversationId),
+            Number(userId),
+        );
 
-  return successResponse(result, 'Conversation deleted successfully');
-}
+        return successResponse(result, 'Conversation deleted successfully');
+    }
 
 
     // Get all messages of a conversation
