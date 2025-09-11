@@ -47,7 +47,7 @@ export class ChatController {
     @Roles('ADMIN', 'USER')
     @Post('create-message')
     async createChat(@Req() req: any, @Body() dto: CreateChatDto) {
-                const userId = req.user.userId
+        const userId = req.user.userId
 
         const result = await this.chatService.createChat(dto, userId);
         return successResponse(result, 'Message sent successfully');

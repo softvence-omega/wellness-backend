@@ -71,7 +71,7 @@ export class ChatService {
             updateAt: conv.updatedAt
         }))
         return {
-            data: result,
+            result,
             meta: {
                 total,
                 page,
@@ -107,8 +107,20 @@ export class ChatService {
             skip,
             take: limit,
         })
+        const total = await this.prisma.chat.count({
+            where: {
+                conversationId
+            }
+        })
 
-        return chats.reverse() //oldest message first
+        return {
+            result: chats.reverse(),
+            meta: {
+                total,
+                page,
+                lastPage: Math.ceil(total / limit)
+            }
+        }
     }
 
 
