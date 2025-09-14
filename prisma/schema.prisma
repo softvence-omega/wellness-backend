@@ -22,7 +22,7 @@ model User {
   isDeleted               Boolean            @default(false)
   changePasswordAt        DateTime?
   createdAt               DateTime           @default(now())
-  updatedAt               DateTime           @updatedAt
+  updatedAt               DateTime           @default(now()) @updatedAt
   chats                   Chat[]             @relation("ChatSender")
   conversations           Conversation[]
   deviceIntegration       DeviceIntegration?
@@ -47,6 +47,8 @@ model Profile {
   height               String?
   weight               String?
   healthGoal           HealthGoal?
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @default(now()) @updatedAt
   user                 User        @relation(fields: [userId], references: [id])
 }
 
@@ -65,6 +67,8 @@ model Notification {
   doNotDisturb       Boolean   @default(false)
   doNotDisturbStart  DateTime?
   doNotDisturbEnd    DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @default(now()) @updatedAt
   user               User      @relation(fields: [userId], references: [id])
 }
 
@@ -80,6 +84,8 @@ model DeviceIntegration {
   strava_isConnected      Boolean   @default(false)
   strava_lastSync         DateTime?
   auto_sync               DateTime?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @default(now()) @updatedAt
   user                    User      @relation(fields: [userId], references: [id])
 }
 
@@ -92,7 +98,7 @@ model Nudge {
   unit         String? // e.g., "hours", "steps", "ml", "kg"
   date         DateTime      @default(now())
   createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  updatedAt    DateTime      @default(now()) @updatedAt
   isDeleted    Boolean       @default(false)
   user         User          @relation(fields: [userId], references: [id])
   tips         Tip[]
@@ -110,15 +116,16 @@ model VitalSigns {
 }
 
 model HeartRate {
-  id                     Int        @id @default(autoincrement())
-  vitalId                Int        @unique
-  heartRate              Int?
-  heartRateLastUpdatedAt DateTime
-  resting                String?
-  average                String?
-  peak                   String?
-  message                String?
-  vital                  VitalSigns @relation(fields: [vitalId], references: [id])
+  id        Int      @id @default(autoincrement())
+  vitalId   Int      @unique
+  heartRate Int?
+  updatedAt DateTime @default(now()) @updatedAt
+
+  resting String?
+  average String?
+  peak    String?
+  message String?
+  vital   VitalSigns @relation(fields: [vitalId], references: [id])
 }
 
 model Step {
@@ -154,18 +161,21 @@ model AdditionalMetrics {
 }
 
 model Meal {
-  id       Int     @id @default(autoincrement())
-  userId   Int
-  photo    String?
-  name     String
-  mealType String
-  note     String?
-  calories String?
-  protein  String?
-  carbs    String?
-  fats     String?
-  time     String?
-  user     User    @relation(fields: [userId], references: [id])
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  photo     String?
+  name      String
+  mealType  String
+  note      String?
+  calories  String?
+  protein   String?
+  carbs     String?
+  fats      String?
+  time      String?
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model LabReport {
@@ -195,7 +205,7 @@ model Conversation {
   title     String
   userId    Int
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime @default(now()) @updatedAt
   chats     Chat[]
   user      User     @relation(fields: [userId], references: [id])
 }
@@ -207,7 +217,7 @@ model Chat {
   type           MessageType
   content        String?
   createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  updatedAt      DateTime     @default(now()) @updatedAt
   conversation   Conversation @relation(fields: [conversationId], references: [id])
   sender         User         @relation("ChatSender", fields: [senderId], references: [id])
 }
