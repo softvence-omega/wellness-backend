@@ -16,6 +16,9 @@ model User {
   fitbitAccessToken       String?
   fitbitRefreshToken      String?
   fitbitAccessTokenExpiry DateTime?
+  stravaAccessToken       String?
+  stravaRefreshToken      String?
+  stravaAccessTokenExpiry DateTime?
   isAgreeTerms            Boolean?           @default(false)
   otp                     String?
   otpExpiry               DateTime?

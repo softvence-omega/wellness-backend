@@ -40,55 +40,50 @@ export class FitbitService {
         })}`;
     }
 
-    async exchangeCodeForToken(code: string, userId: string) {
-        const prisma = this.prisma;
+  async exchangeCodeForToken(code: string, userId: string) {
+  try {
+    const response = await axios.post(
+      'https://api.fitbit.com/oauth2/token',
+      qs.stringify({
+        client_id: this.clientId,
+        grant_type: 'authorization_code',
+        redirect_uri: this.redirectUri,
+        code,
+      }),
+      {
+        headers: {
+          Authorization: `Basic ${Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64')}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      },
+    );
 
-        try {
-            const response = await axios.post(
-                'https://api.fitbit.com/oauth2/token',
-                qs.stringify({
-                    client_id: this.clientId,
-                    grant_type: 'authorization_code',
-                    redirect_uri: this.redirectUri,
-                    code,
-                }),
-                {
-                    headers: {
-                        Authorization: `Basic ${Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64')}`,
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                },
-            );
+    const data = response.data;
 
-            const data = response.data;
+    // Save tokens in DB (single update, no transaction needed)
+    await this.prisma.user.update({
+      where: { id: parseInt(userId) },
+      data: {
+        fitbitAccessToken: data.access_token,
+        fitbitRefreshToken: data.refresh_token,
+        fitbitAccessTokenExpiry: new Date(Date.now() + data.expires_in * 1000),
+      },
+    });
 
-            // Start Prisma transaction
-            await prisma.$transaction(async (tx) => {
-                // Save tokens in DB
-                await tx.user.update({
-                    where: { id: parseInt(userId) },
-                    data: {
-                        fitbitAccessToken: data.access_token,
-                        fitbitRefreshToken: data.refresh_token,
-                        fitbitAccessTokenExpiry: new Date(Date.now() +  data.expires_in * 1000)
-                    },
-                });
+    // Update in-memory cache
+    this.userTokens[userId] = {
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      expiresIn: data.expires_in,
+      obtainedAt: Date.now(),
+    };
 
-                // Only update memory if DB update succeeds
-                this.userTokens[userId] = {
-                    accessToken: data.access_token,
-                    refreshToken: data.refresh_token,
-                    expiresIn: data.expires_in,
-                    obtainedAt: Date.now(),
-                };
-            });
+  } catch (error: any) {
+    console.error('Error connecting Fitbit:', error.response?.data || error.message);
+    throw new HttpException(error.response?.data || error.message, HttpStatus.BAD_REQUEST);
+  }
+}
 
-            return
-        } catch (error: any) {
-            console.error('Error connecting Fitbit:', error.response?.data || error.message);
-            throw new HttpException(error.response?.data || error.message, HttpStatus.BAD_REQUEST);
-        }
-    }
 
 
     async getAccessToken(userId: string): Promise<string> {
