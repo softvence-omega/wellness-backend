@@ -13,6 +13,7 @@ model User {
   role                    Role               @default(USER)
   phone                   String?            @unique
   password                String
+  refreshToken            String?
   fitbitAccessToken       String?
   fitbitRefreshToken      String?
   fitbitAccessTokenExpiry DateTime?
@@ -93,18 +94,19 @@ model DeviceIntegration {
 }
 
 model Nudge {
-  id           Int           @id @default(autoincrement())
-  userId       Int
-  title        String
-  category     NudgeCategory
-  targetAmount Float? // e.g., 8 for sleep hours, 8800 for steps, 2500 for hydration ml (daily target)
-  unit         String? // e.g., "hours", "steps", "ml", "kg"
-  date         DateTime      @default(now())
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @default(now()) @updatedAt
-  isDeleted    Boolean       @default(false)
-  user         User          @relation(fields: [userId], references: [id])
-  tips         Tip[]
+  id             Int           @id @default(autoincrement())
+  userId         Int
+  title          String
+  category       NudgeCategory
+  targetAmount   Float? // e.g., 8 for sleep hours, 8800 for steps, 2500 for hydration ml (daily target)
+  consumedAmount Float?
+  unit           String? // e.g., "hours", "steps", "ml", "kg"
+  date           DateTime      @default(now())
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @default(now()) @updatedAt
+  isDeleted      Boolean       @default(false)
+  user           User          @relation(fields: [userId], references: [id])
+  tips           Tip[]
 }
 
 model VitalSigns {
@@ -164,21 +166,22 @@ model AdditionalMetrics {
 }
 
 model Meal {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  photo     String?
-  name      String
-  mealType  String
-  note      String?
-  calories  String?
-  protein   String?
-  carbs     String?
-  fats      String?
-  time      String?
-  isDeleted Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-  user      User     @relation(fields: [userId], references: [id])
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  photo       String?
+  name        String
+  mealType    String
+  isCompleted Boolean  @default(false)
+  note        String?
+  calories    String?
+  protein     String?
+  carbs       String?
+  fats        String?
+  time        String?
+  isDeleted   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+  user        User     @relation(fields: [userId], references: [id])
 }
 
 model LabReport {

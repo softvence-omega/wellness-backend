@@ -66,13 +66,13 @@ export class AuthService {
                     password: '', // no password for Google users
                     profile: { create: { fullName: googleUser.name || googleUser.email.split('@')[0], isEnableNotification: true, } },
                     isAgreeTerms: true,
-                    
+
                 },
                 include: { profile: true },
             });
         }
 
-        return this.generateToken(user.id, user.email, user.role);
+        return this.generateTokens(user.id, user.email, user.role);
     }
 
 
@@ -86,16 +86,24 @@ export class AuthService {
         const passwordValid = await bcrypt.compare(dto.password, user.password);
         if (!passwordValid) throw new UnauthorizedException('Invalid credentials');
 
-        const token = this.generateToken(user.id, user.email, user.role);
-        return token;
+        const tokens = this.generateTokens(user.id, user.email, user.role);
+        await this.saveRefreshToken(user.id, tokens.refreshToken);
+
+        return tokens;
     }
 
+
     // ---------------- JWT TOKEN ----------------
-    private generateToken(userId: number, email: string, role: string) {
+    private generateTokens(userId: number, email: string, role: string) {
         const payload = { userId, email, role };
-        return {
-            accessToken: this.jwtService.sign(payload),
-        };
+
+        // Access Token (short expiry)
+        const accessToken = this.jwtService.sign(payload, { expiresIn: process.env.ACCESS_TOKEN_EXPIREIN });
+
+        // Refresh Token (long expiry)
+        const refreshToken = this.jwtService.sign(payload, { expiresIn: process.env.REFRESH_TOKEN_EXPIREIN });
+
+        return { accessToken, refreshToken };
     }
 
     async forgotPassword(email: string) {
@@ -175,16 +183,16 @@ export class AuthService {
                 data: {
                     email: appleUser.email,
                     password: '', // Apple login users don't need password
-                    profile: { create: { fullName: appleUser.name || appleUser.email.split('@')[0],  isEnableNotification: true, } },
+                    profile: { create: { fullName: appleUser.name || appleUser.email.split('@')[0], isEnableNotification: true, } },
                     isAgreeTerms: true,
-                   
+
                 },
                 include: { profile: true },
             });
         }
 
         // 5️⃣ Issue your app JWT
-        return this.generateToken(user.id, user.email, user.role);
+        return this.generateTokens(user.id, user.email, user.role);
     }
 
     private generateAppleClientSecret() {
@@ -226,6 +234,44 @@ export class AuthService {
             appleId: payload.sub,
             name: payload.name, // may not always be present
         };
+    }
+    // Save refresh token in DB (hashed for security)
+    private async saveRefreshToken(userId: number, refreshToken: string) {
+        const hashedRefresh = await bcrypt.hash(refreshToken, 10);
+        await this.prisma.user.update({ where: { id: userId }, data: { refreshToken: hashedRefresh } });
+
+    }
+
+    async refreshTokens(userId: number, refreshToken: string) {
+        if (!refreshToken) {
+            throw new BadRequestException('Refresh token is required');
+        }
+
+        const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+        if (!user || !user.refreshToken) {
+            throw new UnauthorizedException('Access Denied');
+        }
+
+        // Ensure DB token exists
+        const dbHashedToken = user.refreshToken;
+        if (!dbHashedToken || dbHashedToken.trim() === '') {
+            throw new UnauthorizedException('Refresh token not found in DB');
+        }
+
+        // 1️⃣ Check refresh token match
+        const refreshMatches = await bcrypt.compare(refreshToken, dbHashedToken);
+        if (!refreshMatches) {
+            throw new UnauthorizedException('Invalid refresh token');
+        }
+
+        // 2️⃣ Generate new tokens
+        const tokens = this.generateTokens(user.id, user.email, user.role);
+
+        // 3️⃣ Save new refresh token in DB
+        await this.saveRefreshToken(user.id, tokens.refreshToken);
+
+        return tokens; // { accessToken, refreshToken }
     }
 
 }

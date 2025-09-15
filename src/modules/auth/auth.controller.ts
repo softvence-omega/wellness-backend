@@ -56,4 +56,14 @@ export class AuthController {
         const token = await this.authService.appleMobileLogin(code);
         return { accessToken: token.accessToken };
     }
+
+    @Post('get-new-access-token')
+    async refreshToken(
+        @Body() { userId, refreshToken }: { userId: number; refreshToken: string }
+    ) {
+        const tokens = await this.authService.refreshTokens(Number(userId), refreshToken);
+        return successResponse(tokens, "Access token refreshed successfully");
+    }
+
+
 }
