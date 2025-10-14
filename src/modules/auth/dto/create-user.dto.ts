@@ -1,22 +1,30 @@
-import { IsEmail, IsNotEmpty, MinLength, IsBoolean, IsOptional } from 'class-validator';
+import { IsEmail, IsString, MinLength, MaxLength, IsNotEmpty, IsOptional, IsBoolean, IsEnum } from 'class-validator';
+import { Language } from '@prisma/client';
 
 export class CreateUserDto {
-  @IsEmail()
+  @IsEmail({}, { message: 'Invalid email format' })
+  @IsNotEmpty({ message: 'Email is required' })
   email: string;
 
-  @IsNotEmpty()
-  @MinLength(6)
+  @IsString({ message: 'Password must be a string' })
+  @MinLength(6, { message: 'Password must be at least 6 characters long' })
+  @MaxLength(100, { message: 'Password is too long' })
+  @IsNotEmpty({ message: 'Password is required' })
   password: string;
 
-  @IsNotEmpty()
-  fullName: string;
-
+  @IsString({ message: 'Full name must be a string' })
   @IsOptional()
-  language?: string;
+  fullName?: string;
 
-  @IsBoolean()
-  isAgreeTerms: boolean;
-
+  @IsEnum(Language, { message: 'Invalid language' })
   @IsOptional()
-  isEnableNotification?: boolean; // Optional, user can choose
+  language?: Language;
+
+  @IsBoolean({ message: 'isAgreeTerms must be a boolean' })
+  @IsOptional()
+  isAgreeTerms?: boolean;
+
+  @IsBoolean({ message: 'isEnableNotification must be a boolean' })
+  @IsOptional()
+  isEnableNotification?: boolean;
 }

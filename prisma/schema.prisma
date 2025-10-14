@@ -12,7 +12,7 @@ model User {
   email                   String             @unique
   role                    Role               @default(USER)
   phone                   String?            @unique
-  password                String
+  password                String?
   refreshToken            String?
   fitbitAccessToken       String?
   fitbitRefreshToken      String?
@@ -20,7 +20,7 @@ model User {
   stravaAccessToken       String?
   stravaRefreshToken      String?
   stravaAccessTokenExpiry DateTime?
-  isAgreeTerms            Boolean?           @default(false)
+  isAgreeTerms            Boolean            @default(false)
   otp                     String?
   otpExpiry               DateTime?
   isDeleted               Boolean            @default(false)
@@ -37,6 +37,9 @@ model User {
   profile                 Profile?
   tips                    Tip[]
   vitalSigns              VitalSigns?
+
+  // Index only on createdAt for time-based queries
+  @@index([createdAt])
 }
 
 model Profile {
@@ -44,16 +47,18 @@ model Profile {
   userId               Int         @unique
   photo                String?
   fullName             String?
-  isEnableNotification Boolean?    @default(false)
-  language             Language?   @default(EN)
+  isEnableNotification Boolean     @default(false)
+  language             Language    @default(EN)
   dateOfBirth          DateTime?
   gender               Gender?
-  height               String?
-  weight               String?
+  height               Float?      // Changed to Float for numeric operations
+  weight               Float?      // Changed to Float for numeric operations
   healthGoal           HealthGoal?
   createdAt            DateTime    @default(now())
   updatedAt            DateTime    @default(now()) @updatedAt
   user                 User        @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
 
 model Notification {
@@ -74,6 +79,8 @@ model Notification {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @default(now()) @updatedAt
   user               User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
 
 model DeviceIntegration {
@@ -91,6 +98,8 @@ model DeviceIntegration {
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @default(now()) @updatedAt
   user                    User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
 
 model Nudge {
@@ -98,15 +107,19 @@ model Nudge {
   userId         Int
   title          String
   category       NudgeCategory
-  targetAmount   Float? // e.g., 8 for sleep hours, 8800 for steps, 2500 for hydration ml (daily target)
+  targetAmount   Float?        // e.g., 8 for sleep hours, 8800 for steps, 2500 for hydration ml
   consumedAmount Float?
-  unit           String? // e.g., "hours", "steps", "ml", "kg"
+  unit           String?       // e.g., "hours", "steps", "ml", "kg"
   date           DateTime      @default(now())
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @default(now()) @updatedAt
   isDeleted      Boolean       @default(false)
   user           User          @relation(fields: [userId], references: [id])
   tips           Tip[]
+
+  // Index on userId and category for frequent filtering
+  @@index([userId, category])
+  @@index([date])
 }
 
 model VitalSigns {
@@ -118,6 +131,8 @@ model VitalSigns {
   sleep      Sleep?
   step       Step?
   user       User               @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
 
 model HeartRate {
@@ -125,23 +140,26 @@ model HeartRate {
   vitalId   Int      @unique
   heartRate Int?
   updatedAt DateTime @default(now()) @updatedAt
+  resting   Int?     // Changed to Int for numeric operations
+  average   Int?     // Changed to Int for numeric operations
+  peak      Int?     // Changed to Int for numeric operations
+  message   Json?    // Changed to Json for flexible storage
+  vital     VitalSigns @relation(fields: [vitalId], references: [id])
 
-  resting String?
-  average String?
-  peak    String?
-  message String?
-  vital   VitalSigns @relation(fields: [vitalId], references: [id])
+  @@index([vitalId])
 }
 
 model Step {
   id         Int        @id @default(autoincrement())
   vitalId    Int        @unique
   stepsCount Int
-  distance   Int
-  calories   Int
+  distance   Float      // Changed to Float for precision
+  calories   Float      // Changed to Float for precision
   activeMin  Int
-  message    String?
+  message    Json?      // Changed to Json for flexible storage
   vital      VitalSigns @relation(fields: [vitalId], references: [id])
+
+  @@index([vitalId])
 }
 
 model Sleep {
@@ -149,20 +167,24 @@ model Sleep {
   vitalId      Int        @unique
   sleepStartAt DateTime
   sleepEndAt   DateTime
-  deep         String?
-  rem          String?
-  light        String?
-  message      String?
+  deep         Float?     // Changed to Float for numeric operations
+  rem          Float?     // Changed to Float for numeric operations
+  light        Float?     // Changed to Float for numeric operations
+  message      Json?      // Changed to Json for flexible storage
   vital        VitalSigns @relation(fields: [vitalId], references: [id])
+
+  @@index([vitalId])
 }
 
 model AdditionalMetrics {
   id                   Int        @id @default(autoincrement())
   vitalId              Int        @unique
   heartRateVariability Int
-  bodyTemp             Int
+  bodyTemp             Float      // Changed to Float for precision
   respiratoryRate      Int
   vital                VitalSigns @relation(fields: [vitalId], references: [id])
+
+  @@index([vitalId])
 }
 
 model Meal {
@@ -170,18 +192,21 @@ model Meal {
   userId      Int
   photo       String?
   name        String
-  mealType    String
+  mealType    MealType
   isCompleted Boolean  @default(false)
   note        String?
-  calories    String?
-  protein     String?
-  carbs       String?
-  fats        String?
-  time        String?
+  calories    Float?   // Changed to Float for numeric operations
+  protein     Float?   // Changed to Float for numeric operations
+  carbs       Float?   // Changed to Float for numeric operations
+  fats        Float?   // Changed to Float for numeric operations
+  time        DateTime? // Changed to DateTime for proper time handling
   isDeleted   Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
   user        User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, mealType])
+  @@index([createdAt])
 }
 
 model LabReport {
@@ -190,6 +215,8 @@ model LabReport {
   photo  String?
   user   User    @relation(fields: [userId], references: [id])
   tips   Tip[]
+
+  @@index([userId])
 }
 
 model Tip {
@@ -204,6 +231,10 @@ model Tip {
   labReport   LabReport? @relation(fields: [labReportId], references: [id])
   nudges      Nudge?     @relation(fields: [nudgesId], references: [id])
   user        User       @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([labReportId])
+  @@index([nudgesId])
 }
 
 model Conversation {
@@ -214,6 +245,9 @@ model Conversation {
   updatedAt DateTime @default(now()) @updatedAt
   chats     Chat[]
   user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
 }
 
 model Chat {
@@ -226,6 +260,9 @@ model Chat {
   updatedAt      DateTime     @default(now()) @updatedAt
   conversation   Conversation @relation(fields: [conversationId], references: [id])
   sender         User         @relation("ChatSender", fields: [senderId], references: [id])
+
+  @@index([conversationId])
+  @@index([createdAt])
 }
 
 enum Language {
@@ -244,7 +281,7 @@ enum MessageType {
   IMAGE
   VIDEO
   AUDIO
-  OTHER // For any future types
+  OTHER
 }
 
 enum HealthGoal {

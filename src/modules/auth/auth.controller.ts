@@ -1,69 +1,150 @@
-import { Controller, Post, Body, Get, Redirect, Query } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpException,
+  Logger,
+  BadRequestException,
+  UnauthorizedException,
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { LoginUserDto } from './dto/login-user.dto';
-import { successResponse } from 'src/common/response';
+
 import { GoogleService } from '../google/google.service';
+import { successResponse } from 'src/common/response';
+import { CreateUserDto } from './dto/create-user.dto';
+import { AppleMobileLoginDto, ForgotPasswordDto, GoogleMobileLoginDto, LoginUserDto, RefreshTokenDto, ResetPasswordDto, VerifyOtpDto } from './dto/login-user.dto';
 
 @Controller('auth')
 export class AuthController {
-    constructor(private authService: AuthService, private googleService: GoogleService,
-    ) { }
+  private readonly logger = new Logger(AuthController.name);
 
-    @Post('register')
-    async register(@Body() createUserDto: CreateUserDto) {
-        const result = await this.authService.register(createUserDto);
-        return successResponse(result, "Registration successfully");
+  constructor(
+    private readonly authService: AuthService,
+    private readonly googleService: GoogleService,
+  ) {}
+
+  private handleError(error: any, context: string): never {
+    this.logger.error(`Error in ${context}: ${error.message}`, {
+      stack: error.stack,
+      context,
+      input: JSON.stringify(error.input || {}),
+    });
+
+    // Pass through known HTTP exceptions
+    if (error instanceof HttpException) {
+      throw error;
     }
 
-    @Post('login')
-    async login(@Body() loginUserDto: LoginUserDto) {
-        const result = await this.authService.login(loginUserDto);
-        return successResponse(result, "Login successfully");
+    // Handle specific Prisma errors
+    if (error.code === 'P2002') {
+      throw new BadRequestException('User already exists with this email');
     }
 
-    @Post('forgot-password')
-    async forgotPassword(@Body('email') email: string) {
-        const result = await this.authService.forgotPassword(email);
-        return successResponse(result, "OTP has been sent to your email");
+    // Handle JWT errors
+    if (error.name === 'TokenExpiredError' || error.name === 'JsonWebTokenError') {
+      throw new UnauthorizedException('Invalid or expired token');
     }
 
-    @Post('verify-otp')
-    async verifyOtp(@Body() { email, otp }: { email: string; otp: string }) {
-        const result = await this.authService.verifyOtp(email, otp);
-        return successResponse(result, "OTP verified successfully");
+    // Default to generic error
+    throw new InternalServerErrorException(`An error occurred during ${context}`);
+  }
+
+  @Post('register')
+  async register(@Body() createUserDto: CreateUserDto) {
+    try {
+      this.logger.log(`Register attempt for email: ${createUserDto.email}`);
+      const result = await this.authService.register(createUserDto);
+      return successResponse(result, 'Registration successful');
+    } catch (error) {
+      error.input = createUserDto;
+      this.handleError(error, 'register');
     }
+  }
 
-    @Post('reset-password')
-    async resetPassword(@Body() { email, otp, newPassword }: { email: string; otp: string; newPassword: string }) {
-        const result = await this.authService.resetPasswordWithOtp(email, otp, newPassword);
-        return successResponse(result, "Password changed successfully");
+  @Post('login')
+  async login(@Body() loginUserDto: LoginUserDto) {
+    try {
+      this.logger.log(`Login attempt for email: ${loginUserDto.email}`);
+      const result = await this.authService.login(loginUserDto);
+      return successResponse(result, 'Login successful');
+    } catch (error) {
+      error.input = loginUserDto;
+      this.handleError(error, 'login');
     }
+  }
 
-    @Post('google-mobile-login')
-    async googleMobileLogin(@Body('idToken') idToken: string) {
-        // 1️⃣ Verify token and get Google user info
-        const googleUser = await this.googleService.verifyIdToken(idToken);
-
-        // 2️⃣ Login or register user in your DB
-        const token = await this.authService.googleMobileLogin(googleUser);
-
-        return { accessToken: token.accessToken };
+  @Post('forgot-password')
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    try {
+      this.logger.log(`Forgot password request for email: ${dto.email}`);
+      const result = await this.authService.forgotPassword(dto.email);
+      return successResponse(result, 'OTP sent to email');
+    } catch (error) {
+      error.input = dto;
+      this.handleError(error, 'forgot-password');
     }
+  }
 
-    @Post('apple-mobile-login')
-    async appleMobileLogin(@Body('code') code: string) {
-        const token = await this.authService.appleMobileLogin(code);
-        return { accessToken: token.accessToken };
+  @Post('verify-otp')
+  async verifyOtp(@Body() dto: VerifyOtpDto) {
+    try {
+      this.logger.log(`OTP verification attempt for email: ${dto.email}`);
+      const result = await this.authService.verifyOtp(dto.email, dto.otp);
+      return successResponse(result, 'OTP verified successfully');
+    } catch (error) {
+      error.input = dto;
+      this.handleError(error, 'verify-otp');
     }
+  }
 
-    @Post('get-new-access-token')
-    async refreshToken(
-        @Body() { userId, refreshToken }: { userId: number; refreshToken: string }
-    ) {
-        const tokens = await this.authService.refreshTokens(Number(userId), refreshToken);
-        return successResponse(tokens, "Access token refreshed successfully");
+  @Post('reset-password')
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    try {
+      this.logger.log(`Password reset attempt for email: ${dto.email}`);
+      const result = await this.authService.resetPasswordWithOtp(dto.email, dto.otp, dto.newPassword);
+      return successResponse(result, 'Password reset successfully');
+    } catch (error) {
+      error.input = { email: dto.email, otp: dto.otp };
+      this.handleError(error, 'reset-password');
     }
+  }
 
+  @Post('google-mobile-login')
+  async googleMobileLogin(@Body() dto: GoogleMobileLoginDto) {
+    try {
+      this.logger.log('Google mobile login attempt');
+      const googleUser = await this.googleService.verifyIdToken(dto.idToken);
+      const result = await this.authService.googleMobileLogin(googleUser);
+      return successResponse(result, 'Google login successful');
+    } catch (error) {
+      error.input = { idToken: dto.idToken };
+      this.handleError(error, 'google-mobile-login');
+    }
+  }
 
+  @Post('apple-mobile-login')
+  async appleMobileLogin(@Body() dto: AppleMobileLoginDto) {
+    try {
+      this.logger.log('Apple mobile login attempt');
+      const result = await this.authService.appleMobileLogin(dto.code);
+      return successResponse(result, 'Apple login successful');
+    } catch (error) {
+      error.input = { code: dto.code };
+      this.handleError(error, 'apple-mobile-login');
+    }
+  }
+
+  @Post('get-new-access-token')
+  async refreshToken(@Body() dto: RefreshTokenDto) {
+    try {
+      this.logger.log(`Token refresh attempt for userId: ${dto.userId}`);
+      const result = await this.authService.refreshTokens(dto.userId, dto.refreshToken);
+      return successResponse(result, 'Access token refreshed successfully');
+    } catch (error) {
+      error.input = { userId: dto.userId };
+      this.handleError(error, 'refresh-token');
+    }
+  }
 }
