@@ -10,6 +10,7 @@ import { Language, Role } from '@prisma/client';
 import axios from 'axios';
 import * as jwt from 'jsonwebtoken';
 import jwkToPem from 'jwk-to-pem';
+import { OAuth2Client } from 'google-auth-library';
 
 interface GoogleUser {
   email: string;
@@ -32,6 +33,7 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private accessTokenExpiresIn: JwtExpiresIn;
   private refreshTokenExpiresIn: JwtExpiresIn;
+  private googleClient: OAuth2Client;
 
   constructor(
     private prisma: PrismaService,
@@ -40,6 +42,7 @@ export class AuthService {
     private configService: ConfigService,
   ) {
     this.validateEnvVars();
+    this.googleClient = new OAuth2Client(this.configService.get<string>('GOOGLE_CLIENT_ID'));
   }
 
   private validateEnvVars() {
@@ -49,7 +52,8 @@ export class AuthService {
       'APPLE_CLIENT_ID',
       'APPLE_TEAM_ID',
       'APPLE_KEY_ID',
-      'APPLE_PRIVATE_KEY', // Removed APPLE_PRIVATE_KEY_PATH
+      'APPLE_PRIVATE_KEY',
+      'GOOGLE_CLIENT_ID', // Added for Google token validation
     ];
 
     for (const envVar of requiredVars) {
@@ -127,7 +131,7 @@ export class AuthService {
           isAgreeTerms: dto.isAgreeTerms ?? false,
         },
         select: {
-          id: true,
+          id: true, // CUID string
           email: true,
           role: true,
           profile: true,
@@ -140,30 +144,46 @@ export class AuthService {
     return { message: 'User registered successfully', user };
   }
 
-  async googleMobileLogin(googleUser: GoogleUser) {
-    this.logger.log(`Google login attempt for email: ${googleUser.email}`);
+  async googleMobileLogin(idToken: string): Promise<{ message: string; tokens: { accessToken: string; refreshToken: string }; userId: string }> {
+    this.logger.log(`Google login attempt with idToken`);
 
-    if (!googleUser.email) {
-      throw new BadRequestException('Google user email is required');
-    }
-
-    let user = await this.prisma.user.findUnique({
-      where: { email: googleUser.email, isDeleted: false },
-      select: { id: true, email: true, role: true },
-    });
-
-    if (!user) {
-      user = await this.createUser({
-        email: googleUser.email,
-        fullName: googleUser.name || googleUser.email.split('@')[0],
-        isSocialLogin: true,
+    try {
+      const ticket = await this.googleClient.verifyIdToken({
+        idToken,
+        audience: this.configService.get<string>('GOOGLE_CLIENT_ID'),
       });
+      const payload = ticket.getPayload();
+      if (!payload || !payload.email) {
+        throw new BadRequestException('Google user email is required');
+      }
+
+      const googleUser: GoogleUser = {
+        email: payload.email,
+        name: payload.name,
+        picture: payload.picture,
+      };
+
+      let user = await this.prisma.user.findUnique({
+        where: { email: googleUser.email, isDeleted: false },
+        select: { id: true, email: true, role: true },
+      });
+
+      if (!user) {
+        user = await this.createUser({
+          email: googleUser.email,
+          fullName: googleUser.name || googleUser.email.split('@')[0],
+          isSocialLogin: true,
+        });
+      }
+
+      const tokens = await this.generateTokens(user.id, user.email, user.role);
+      await this.saveRefreshToken(user.id, tokens.refreshToken);
+
+      return { message: 'Google login successful', tokens, userId: user.id };
+    } catch (error) {
+      this.logger.error(`Google login failed: ${error.message}`);
+      throw new UnauthorizedException(`Google login failed: ${error.message}`);
     }
-
-    const tokens = await this.generateTokens(user.id, user.email, user.role);
-    await this.saveRefreshToken(user.id, tokens.refreshToken);
-
-    return { message: 'Google login successful', tokens, userId: user.id };
   }
 
   async login(dto: LoginUserDto) {
@@ -192,9 +212,9 @@ export class AuthService {
     return { message: 'Login successful', tokens, userId: user.id };
   }
 
-  private async generateTokens(userId: number, email: string, role: Role) {
+  private async generateTokens(userId: string, email: string, role: Role) {
     const payload = {
-      sub: userId.toString(),
+      sub: userId, // CUID string
       email,
       role: role.toString(),
       iss: this.configService.get<string>('JWT_ISSUER') || 'my-app',
@@ -344,7 +364,7 @@ export class AuthService {
     }
   }
 
-  async refreshTokens(userId: number, refreshToken: string) {
+  async refreshTokens(userId: string, refreshToken: string) {
     this.logger.log(`Token refresh attempt for userId: ${userId}`);
 
     if (!refreshToken) {
@@ -396,7 +416,7 @@ export class AuthService {
           isAgreeTerms: true,
         },
         select: {
-          id: true,
+          id: true, // CUID string
           email: true,
           role: true,
         },
@@ -410,7 +430,7 @@ export class AuthService {
       const claims = {
         iss: this.configService.get<string>('APPLE_TEAM_ID')!,
         iat: Math.floor(Date.now() / 1000),
-        exp: Math.floor(Date.now() / 1000) + 15777000,
+        exp: Math.floor(Date.now() / 1000) + 15777000, // ~6 months
         aud: 'https://appleid.apple.com',
         sub: this.configService.get<string>('APPLE_CLIENT_ID')!,
       };
@@ -460,7 +480,7 @@ export class AuthService {
     }
   }
 
-  private async saveRefreshToken(userId: number, refreshToken: string) {
+  private async saveRefreshToken(userId: string, refreshToken: string) {
     const hashedRefresh = await bcrypt.hash(refreshToken, 10);
     await this.prisma.user.update({
       where: { id: userId },

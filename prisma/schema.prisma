@@ -8,7 +8,7 @@ datasource db {
 }
 
 model User {
-  id                      Int                @id @default(autoincrement())
+  id                      String             @id @default(cuid()) // Changed to CUID
   email                   String             @unique
   role                    Role               @default(USER)
   phone                   String?            @unique
@@ -38,21 +38,20 @@ model User {
   tips                    Tip[]
   vitalSigns              VitalSigns?
 
-  // Index only on createdAt for time-based queries
   @@index([createdAt])
 }
 
 model Profile {
-  id                   Int         @id @default(autoincrement())
-  userId               Int         @unique
+  id                   String      @id @default(cuid()) // Changed to CUID
+  userId               String      @unique // Changed to String
   photo                String?
   fullName             String?
   isEnableNotification Boolean     @default(false)
   language             Language    @default(EN)
   dateOfBirth          DateTime?
   gender               Gender?
-  height               Float?      // Changed to Float for numeric operations
-  weight               Float?      // Changed to Float for numeric operations
+  height               Float?
+  weight               Float?
   healthGoal           HealthGoal?
   createdAt            DateTime    @default(now())
   updatedAt            DateTime    @default(now()) @updatedAt
@@ -62,8 +61,8 @@ model Profile {
 }
 
 model Notification {
-  id                 Int       @id @default(autoincrement())
-  userId             Int       @unique
+  id                 String    @id @default(cuid()) // Changed to CUID
+  userId             String    @unique // Changed to String
   activityReminders  Boolean   @default(false)
   mealTracking       Boolean   @default(false)
   sleepInsights      Boolean   @default(false)
@@ -84,8 +83,8 @@ model Notification {
 }
 
 model DeviceIntegration {
-  id                      Int       @id @default(autoincrement())
-  userId                  Int       @unique
+  id                      String    @id @default(cuid()) // Changed to CUID
+  userId                  String    @unique // Changed to String
   appleHealth_isConnected Boolean   @default(false)
   appleHealth_lastSync    DateTime?
   googleFit_isConnected   Boolean   @default(false)
@@ -103,13 +102,13 @@ model DeviceIntegration {
 }
 
 model Nudge {
-  id             Int           @id @default(autoincrement())
-  userId         Int
+  id             String        @id @default(cuid()) // Changed to CUID
+  userId         String        // Changed to String
   title          String
   category       NudgeCategory
-  targetAmount   Float?        // e.g., 8 for sleep hours, 8800 for steps, 2500 for hydration ml
+  targetAmount   Float?
   consumedAmount Float?
-  unit           String?       // e.g., "hours", "steps", "ml", "kg"
+  unit           String?
   date           DateTime      @default(now())
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @default(now()) @updatedAt
@@ -117,14 +116,13 @@ model Nudge {
   user           User          @relation(fields: [userId], references: [id])
   tips           Tip[]
 
-  // Index on userId and category for frequent filtering
   @@index([userId, category])
   @@index([date])
 }
 
 model VitalSigns {
-  id         Int                @id @default(autoincrement())
-  userId     Int                @unique
+  id         String             @id @default(cuid()) // Changed to CUID
+  userId     String             @unique // Changed to String
   dataFrom   String
   additional AdditionalMetrics?
   heartRate  HeartRate?
@@ -136,51 +134,51 @@ model VitalSigns {
 }
 
 model HeartRate {
-  id        Int      @id @default(autoincrement())
-  vitalId   Int      @unique
+  id        String     @id @default(cuid()) // Changed to CUID
+  vitalId   String     @unique // Changed to String
   heartRate Int?
-  updatedAt DateTime @default(now()) @updatedAt
-  resting   Int?     // Changed to Int for numeric operations
-  average   Int?     // Changed to Int for numeric operations
-  peak      Int?     // Changed to Int for numeric operations
-  message   Json?    // Changed to Json for flexible storage
+  updatedAt DateTime   @default(now()) @updatedAt
+  resting   Int?
+  average   Int?
+  peak      Int?
+  message   Json?
   vital     VitalSigns @relation(fields: [vitalId], references: [id])
 
   @@index([vitalId])
 }
 
 model Step {
-  id         Int        @id @default(autoincrement())
-  vitalId    Int        @unique
+  id         String     @id @default(cuid()) // Changed to CUID
+  vitalId    String     @unique // Changed to String
   stepsCount Int
-  distance   Float      // Changed to Float for precision
-  calories   Float      // Changed to Float for precision
+  distance   Float
+  calories   Float
   activeMin  Int
-  message    Json?      // Changed to Json for flexible storage
+  message    Json?
   vital      VitalSigns @relation(fields: [vitalId], references: [id])
 
   @@index([vitalId])
 }
 
 model Sleep {
-  id           Int        @id @default(autoincrement())
-  vitalId      Int        @unique
+  id           String     @id @default(cuid()) // Changed to CUID
+  vitalId      String     @unique // Changed to String
   sleepStartAt DateTime
   sleepEndAt   DateTime
-  deep         Float?     // Changed to Float for numeric operations
-  rem          Float?     // Changed to Float for numeric operations
-  light        Float?     // Changed to Float for numeric operations
-  message      Json?      // Changed to Json for flexible storage
+  deep         Float?
+  rem          Float?
+  light        Float?
+  message      Json?
   vital        VitalSigns @relation(fields: [vitalId], references: [id])
 
   @@index([vitalId])
 }
 
 model AdditionalMetrics {
-  id                   Int        @id @default(autoincrement())
-  vitalId              Int        @unique
+  id                   String     @id @default(cuid()) // Changed to CUID
+  vitalId              String     @unique // Changed to String
   heartRateVariability Int
-  bodyTemp             Float      // Changed to Float for precision
+  bodyTemp             Float
   respiratoryRate      Int
   vital                VitalSigns @relation(fields: [vitalId], references: [id])
 
@@ -188,42 +186,42 @@ model AdditionalMetrics {
 }
 
 model Meal {
-  id          Int      @id @default(autoincrement())
-  userId      Int
+  id          String    @id @default(cuid()) // Changed to CUID
+  userId      String    // Changed to String
   photo       String?
   name        String
   mealType    MealType
-  isCompleted Boolean  @default(false)
+  isCompleted Boolean   @default(false)
   note        String?
-  calories    Float?   // Changed to Float for numeric operations
-  protein     Float?   // Changed to Float for numeric operations
-  carbs       Float?   // Changed to Float for numeric operations
-  fats        Float?   // Changed to Float for numeric operations
-  time        DateTime? // Changed to DateTime for proper time handling
-  isDeleted   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
-  user        User     @relation(fields: [userId], references: [id])
+  calories    Float?
+  protein     Float?
+  carbs       Float?
+  fats        Float?
+  time        DateTime?
+  isDeleted   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+  user        User      @relation(fields: [userId], references: [id])
 
   @@index([userId, mealType])
   @@index([createdAt])
 }
 
 model LabReport {
-  id     Int     @id @default(autoincrement())
-  userId Int
+  id     String    @id @default(cuid()) // Changed to CUID
+  userId String    // Changed to String
   photo  String?
-  user   User    @relation(fields: [userId], references: [id])
+  user   User      @relation(fields: [userId], references: [id])
   tips   Tip[]
 
   @@index([userId])
 }
 
 model Tip {
-  id          Int        @id @default(autoincrement())
-  userId      Int
-  labReportId Int?
-  nudgesId    Int?
+  id          String     @id @default(cuid()) // Changed to CUID
+  userId      String     // Changed to String
+  labReportId String?    // Changed to String
+  nudgesId    String?    // Changed to String
   type        TipType
   message     String
   riskLevel   RiskLevel
@@ -238,22 +236,22 @@ model Tip {
 }
 
 model Conversation {
-  id        Int      @id @default(autoincrement())
+  id        String    @id @default(cuid()) // Changed to CUID
   title     String
-  userId    Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  userId    String    // Changed to String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @updatedAt
   chats     Chat[]
-  user      User     @relation(fields: [userId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([createdAt])
 }
 
 model Chat {
-  id             Int          @id @default(autoincrement())
-  conversationId Int
-  senderId       Int
+  id             String       @id @default(cuid()) // Changed to CUID
+  conversationId String       // Changed to String
+  senderId       String       // Changed to String
   type           MessageType
   content        String?
   createdAt      DateTime     @default(now())

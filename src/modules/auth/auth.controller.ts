@@ -10,8 +10,6 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-
-import { GoogleService } from '../google/google.service';
 import { successResponse } from 'src/common/response';
 import { CreateUserDto } from './dto/create-user.dto';
 import { AppleMobileLoginDto, ForgotPasswordDto, GoogleMobileLoginDto, LoginUserDto, RefreshTokenDto, ResetPasswordDto, VerifyOtpDto } from './dto/login-user.dto';
@@ -22,7 +20,6 @@ export class AuthController {
 
   constructor(
     private readonly authService: AuthService,
-    private readonly googleService: GoogleService,
   ) {}
 
   private handleError(error: any, context: string): never {
@@ -32,22 +29,18 @@ export class AuthController {
       input: JSON.stringify(error.input || {}),
     });
 
-    // Pass through known HTTP exceptions
     if (error instanceof HttpException) {
       throw error;
     }
 
-    // Handle specific Prisma errors
     if (error.code === 'P2002') {
       throw new BadRequestException('User already exists with this email');
     }
 
-    // Handle JWT errors
     if (error.name === 'TokenExpiredError' || error.name === 'JsonWebTokenError') {
       throw new UnauthorizedException('Invalid or expired token');
     }
 
-    // Default to generic error
     throw new InternalServerErrorException(`An error occurred during ${context}`);
   }
 
@@ -111,23 +104,23 @@ export class AuthController {
     }
   }
 
-  @Post('google-mobile-login')
-  async googleMobileLogin(@Body() dto: GoogleMobileLoginDto) {
-    try {
-      this.logger.log('Google mobile login attempt');
-      const googleUser = await this.googleService.verifyIdToken(dto.idToken);
-      const result = await this.authService.googleMobileLogin(googleUser);
-      return successResponse(result, 'Google login successful');
-    } catch (error) {
-      error.input = { idToken: dto.idToken };
-      this.handleError(error, 'google-mobile-login');
-    }
-  }
+  // @Post('google-mobile-login')
+  // async googleMobileLogin(@Body() dto: GoogleMobileLoginDto) {
+  //   try {
+  //     this.logger.log(`Google mobile login attempt`);
+  //     const googleUser = await this.googleService.verifyGoogleToken(dto.idToken);
+  //     const result = await this.authService.googleMobileLogin(googleUser);
+  //     return successResponse(result, 'Google login successful');
+  //   } catch (error) {
+  //     error.input = { idToken: dto.idToken };
+  //     this.handleError(error, 'google-mobile-login');
+  //   }
+  // }
 
   @Post('apple-mobile-login')
   async appleMobileLogin(@Body() dto: AppleMobileLoginDto) {
     try {
-      this.logger.log('Apple mobile login attempt');
+      this.logger.log(`Apple mobile login attempt`);
       const result = await this.authService.appleMobileLogin(dto.code);
       return successResponse(result, 'Apple login successful');
     } catch (error) {

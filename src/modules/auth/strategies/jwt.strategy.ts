@@ -48,38 +48,35 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
   }
 
-  async validate(payload: JwtPayload) {
-    this.logger.log(`Validating JWT for sub: ${payload.sub}`);
+async validate(payload: JwtPayload) {
+  this.logger.log(`Validating JWT for sub: ${payload.sub}`);
 
-    if (!payload.sub || !payload.email || !payload.role) {
-      this.logger.warn(`Invalid JWT payload: ${JSON.stringify(payload)}`);
-      throw new UnauthorizedException('Invalid token payload');
-    }
-
-    const userId = parseInt(payload.sub, 10);
-    if (isNaN(userId)) {
-      this.logger.warn(`Invalid userId in JWT payload: ${payload.sub}`);
-      throw new UnauthorizedException('Invalid user ID in token');
-    }
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId, isDeleted: false },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-      },
-    });
-
-    if (!user) {
-      this.logger.warn(`User not found for userId: ${userId}`);
-      throw new UnauthorizedException('User not found or disabled');
-    }
-
-    return {
-      userId: user.id,
-      email: user.email,
-      role: user.role.toString(),
-    };
+  if (!payload.sub || !payload.email || !payload.role) {
+    this.logger.warn(`Invalid JWT payload: ${JSON.stringify(payload)}`);
+    throw new UnauthorizedException('Invalid token payload');
   }
+
+  // Remove the parseInt conversion since IDs are now strings (CUID)
+  const userId = payload.sub;
+
+  const user = await this.prisma.user.findUnique({
+    where: { id: userId, isDeleted: false }, // id is now string
+    select: {
+      id: true,
+      email: true,
+      role: true,
+    },
+  });
+
+  if (!user) {
+    this.logger.warn(`User not found for userId: ${userId}`);
+    throw new UnauthorizedException('User not found or disabled');
+  }
+
+  return {
+    userId: user.id, // This is now a string
+    email: user.email,
+    role: user.role.toString(),
+  };
+}
 }

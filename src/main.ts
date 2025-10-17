@@ -204,7 +204,7 @@ async function bootstrap() {
         'http://localhost:3000',
         'http://localhost:3001',
         'http://localhost:5173', // Vite
-        'http://localhost:8080', // Common web port
+        'http://localhost:8080',
         'https://yourdomain.com',
         'https://www.yourdomain.com',
         

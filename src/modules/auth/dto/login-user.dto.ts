@@ -1,5 +1,5 @@
-import { IsEmail, IsString, MinLength, MaxLength, IsNotEmpty, IsOptional, IsBoolean, IsEnum } from 'class-validator';
-import { Language } from '@prisma/client';
+import { IsEmail, IsString, MinLength, MaxLength, IsNotEmpty } from 'class-validator';
+
 export class LoginUserDto {
   @IsEmail({}, { message: 'Invalid email format' })
   @IsNotEmpty({ message: 'Email is required' })
@@ -61,8 +61,9 @@ export class AppleMobileLoginDto {
 }
 
 export class RefreshTokenDto {
+  @IsString({ message: 'User ID must be a string' }) // Changed to string
   @IsNotEmpty({ message: 'User ID is required' })
-  userId: number;
+  userId: string; // Changed to string for CUID
 
   @IsString({ message: 'Refresh token must be a string' })
   @MinLength(10, { message: 'Invalid refresh token format' })
