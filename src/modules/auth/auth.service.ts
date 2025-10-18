@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, NotFoundException, Logger, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -142,6 +142,177 @@ export class AuthService {
     });
 
     return { message: 'User registered successfully', user };
+  }
+
+   async registerAdmin(dto: CreateUserDto, secretKey: string): Promise<{ message: string; user: any }> {
+    this.logger.log(`Admin registration attempt for email: ${dto.email}`);
+
+    // Verify secret key from environment
+    const adminSecret = this.configService.get<string>('ADMIN_REGISTRATION_SECRET');
+    if (!adminSecret || secretKey !== adminSecret) {
+      throw new BadRequestException('Invalid admin registration secret');
+    }
+
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: dto.email, isDeleted: false },
+      select: { id: true },
+    });
+    if (existingUser) {
+      throw new BadRequestException('Email is already registered.');
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    const user = await this.prisma.$transaction(async (prisma) => {
+      return prisma.user.create({
+        data: {
+          email: dto.email,
+          password: hashedPassword,
+          role: Role.ADMIN, // Set as ADMIN
+          profile: {
+            create: {
+              fullName: dto.fullName,
+              language: (dto.language as Language) || Language.EN,
+              isEnableNotification: dto.isEnableNotification ?? false,
+            },
+          },
+          isAgreeTerms: dto.isAgreeTerms ?? false,
+        },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          profile: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+    });
+
+    return { message: 'Admin user registered successfully', user };
+  }
+
+  // Admin: Create user with specific role (only ADMIN can do this)
+  async createUserWithRole(dto: CreateUserDto & { role: Role }, adminUserId: string): Promise<{ message: string; user: any }> {
+    this.logger.log(`Admin ${adminUserId} creating user with role: ${dto.role}`);
+
+    // Verify admin permissions
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId, isDeleted: false },
+      select: { role: true },
+    });
+
+    if (!admin || admin.role !== Role.ADMIN) {
+      throw new ForbiddenException('Only administrators can create users with specific roles');
+    }
+
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: dto.email, isDeleted: false },
+      select: { id: true },
+    });
+    if (existingUser) {
+      throw new BadRequestException('Email is already registered.');
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    const user = await this.prisma.$transaction(async (prisma) => {
+      return prisma.user.create({
+        data: {
+          email: dto.email,
+          password: hashedPassword,
+          role: dto.role, // Use the specified role
+          profile: {
+            create: {
+              fullName: dto.fullName,
+              language: (dto.language as Language) || Language.EN,
+              isEnableNotification: dto.isEnableNotification ?? false,
+            },
+          },
+          isAgreeTerms: dto.isAgreeTerms ?? false,
+        },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          profile: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+    });
+
+    return { message: `User created successfully with ${dto.role} role`, user };
+  }
+
+  // Admin: Update user role
+  async updateUserRole(adminUserId: string, userId: string, newRole: Role): Promise<{ message: string; user: any }> {
+    this.logger.log(`Admin ${adminUserId} updating user ${userId} role to ${newRole}`);
+
+    // Verify admin permissions
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId, isDeleted: false },
+      select: { role: true },
+    });
+
+    if (!admin || admin.role !== Role.ADMIN) {
+      throw new ForbiddenException('Only administrators can update user roles');
+    }
+
+    // Prevent admin from modifying their own role
+    if (adminUserId === userId) {
+      throw new BadRequestException('Cannot modify your own role');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId, isDeleted: false },
+      select: { id: true, role: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { role: newRole },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        updatedAt: true,
+      },
+    });
+
+    return { message: 'User role updated successfully', user: updatedUser };
+  }
+
+  // Get user role
+  async getUserRole(userId: string): Promise<{ role: Role }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId, isDeleted: false },
+      select: { role: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return { role: user.role };
+  }
+
+  // Check if user is admin
+  async isUserAdmin(userId: string): Promise<{ isAdmin: boolean }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId, isDeleted: false },
+      select: { role: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return { isAdmin: user.role === Role.ADMIN };
   }
 
   async googleMobileLogin(idToken: string): Promise<{ message: string; tokens: { accessToken: string; refreshToken: string }; userId: string }> {
@@ -423,6 +594,10 @@ export class AuthService {
       });
     });
   }
+
+
+
+  
 
   private async generateAppleClientSecret() {
     try {

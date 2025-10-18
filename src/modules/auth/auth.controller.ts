@@ -8,11 +8,20 @@ import {
   UnauthorizedException,
   NotFoundException,
   InternalServerErrorException,
+  UseGuards,
+  Get,
+  Req,
+  Put,
+  Param,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { successResponse } from 'src/common/response';
 import { CreateUserDto } from './dto/create-user.dto';
 import { AppleMobileLoginDto, ForgotPasswordDto, GoogleMobileLoginDto, LoginUserDto, RefreshTokenDto, ResetPasswordDto, VerifyOtpDto } from './dto/login-user.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RolesGuard } from './guards/role-auth.guard';
+import { Roles } from './decorators/roles.decorator';
+import { Role } from '@prisma/client';
 
 @Controller('auth')
 export class AuthController {
@@ -102,6 +111,37 @@ export class AuthController {
       error.input = { email: dto.email, otp: dto.otp };
       this.handleError(error, 'reset-password');
     }
+  }
+
+    @Post('register-admin')
+    async registerAdmin(@Body() dto: CreateUserDto & { secretKey: string }) {
+    return this.authService.registerAdmin(dto, dto.secretKey);
+  }
+  @UseGuards(JwtAuthGuard)
+  @Get('my-role')
+  async getMyRole(@Req() req: any) {
+    return this.authService.getUserRole(req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('is-admin')
+  async isAdmin(@Req() req: any) {
+    return this.authService.isUserAdmin(req.user.userId);
+  }
+
+  // Admin-only endpoints
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @Post('users/with-role')
+  async createUserWithRole(@Req() req: any, @Body() dto: CreateUserDto & { role: Role }) {
+    return this.authService.createUserWithRole(dto, req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @Put('users/:userId/role')
+  async updateUserRole(@Req() req: any, @Param('userId') userId: string, @Body('role') role: Role) {
+    return this.authService.updateUserRole(req.user.userId, userId, role);
   }
 
   // @Post('google-mobile-login')
