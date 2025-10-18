@@ -60,7 +60,6 @@ export class MealService {
         data: mealData,
         select: this.getMealSelectFields(),
       });
-
       this.logger.log('Meal created successfully', context, { 
         mealId: meal.id, 
         userId, 
@@ -82,12 +81,11 @@ export class MealService {
       if (error.code === 'P2025') {
         throw new BadRequestException('User not found');
       }
-      
+    
       throw new BadRequestException('Failed to create meal');
     }
   }
 
-  // Get all Meals with pagination and filtering
   async findAll(
     userId: string, 
     page: number = 1, 
