@@ -192,6 +192,7 @@ model Meal {
   name        String
   mealType    MealType
   isCompleted Boolean   @default(false)
+  description  String?
   note        String?
   calories    Float?
   protein     Float?
@@ -313,10 +314,19 @@ enum NudgeCategory {
   OTHER
 }
 
+// enum MealType {
+//   BREAKFAST
+//   LUNCH
+//   DINNER
+//   SNACK
+//   OTHER
+// }
 enum MealType {
   BREAKFAST
   LUNCH
   DINNER
   SNACK
+  PRE_WORKOUT
+  POST_WORKOUT
   OTHER
 }

@@ -13,6 +13,7 @@ import { VitalsModule } from './modules/vitals/vitals.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { GoogleService } from './modules/google/google.service';
 import { ConfigModule } from '@nestjs/config';
+import { MealsModule } from './modules/meals/meals.module';
 // import { FitbitModule } from './modules/fitbit/fitbit.module';
 // import { NudgeModule } from './modules/nudge/nudge.module';
 // import { StravaModule } from './modules/strava/strava.module';
@@ -20,7 +21,7 @@ import { ConfigModule } from '@nestjs/config';
 @Module({
   imports: [ConfigModule.forRoot({
     isGlobal: true, // 👈 makes ConfigService available everywhere
-  }), AuthModule, DeviceIntegrationModule, LabReportsModule, ProfileModule, TipsModule, VitalsModule, ],
+  }), AuthModule, DeviceIntegrationModule, LabReportsModule, ProfileModule,MealsModule, TipsModule, VitalsModule, ],
   controllers: [],
   providers: [GoogleService],
 })
