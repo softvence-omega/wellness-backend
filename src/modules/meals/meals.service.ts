@@ -4,15 +4,20 @@ import { CreateMealDto } from './dto/create-meal-dto';
 import { UpdateMealDto } from './dto/update-meal-dto';
 import { MealType, Prisma } from '@prisma/client';
 import { CustomLogger } from 'src/logger/logger.service';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Injectable()
 export class MealService {
   private readonly logger = new CustomLogger();
-
-  constructor(private prisma: PrismaService) {}
+  
+  constructor(private prisma: PrismaService, private cloudinaryService: CloudinaryService) {}
 
   // Create Meal
-  async create(userId: string, dto: CreateMealDto) {
+ async create(
+    userId: string, 
+    dto: CreateMealDto, 
+    file?: Express.Multer.File
+  ) {
     const context = 'MealService.create';
     
     // Validate required fields
@@ -38,12 +43,18 @@ export class MealService {
         }
       }
 
+      // Upload file to Cloudinary if provided
+      let photoUrl: string | undefined;
+      if (file) {
+        photoUrl = await this.cloudinaryService.uploadImage(file);
+      }
+
       const mealData: Prisma.MealCreateInput = {
         name: dto.name.trim(),
         mealType: dto.mealType,
         description: dto.description?.trim(),
         note: dto.note?.trim(),
-        photo: dto.photo?.trim(),
+        photo: photoUrl || dto.photo?.trim(), // Use uploaded file or existing URL
         calories: dto.calories,
         protein: dto.protein,
         carbs: dto.carbs,
@@ -60,10 +71,12 @@ export class MealService {
         data: mealData,
         select: this.getMealSelectFields(),
       });
+
       this.logger.log('Meal created successfully', context, { 
         mealId: meal.id, 
         userId, 
-        mealType: meal.mealType 
+        mealType: meal.mealType,
+        hasPhoto: !!photoUrl,
       });
 
       return meal;
@@ -85,6 +98,7 @@ export class MealService {
       throw new BadRequestException('Failed to create meal');
     }
   }
+
 
   async findAll(
     userId: string, 
@@ -258,7 +272,12 @@ export class MealService {
   }
 
   // Update Meal
-  async update(id: string, userId: string, dto: UpdateMealDto) {
+async update(
+    id: string, 
+    userId: string, 
+    dto: UpdateMealDto, 
+    file?: Express.Multer.File
+  ) {
     const context = 'MealService.update';
     
     if (!id?.trim()) {
@@ -267,7 +286,7 @@ export class MealService {
     }
 
     // Validate that at least one field is provided
-    if (Object.keys(dto).length === 0) {
+    if (Object.keys(dto).length === 0 && !file) {
       this.logger.warn('No fields provided for update', context, { userId, mealId: id });
       throw new BadRequestException('At least one field must be provided for update');
     }
@@ -286,6 +305,27 @@ export class MealService {
       if (!existingMeal) {
         this.logger.warn('Meal not found for update', context, { userId, mealId: id });
         throw new NotFoundException('Meal not found');
+      }
+
+      // Upload new file to Cloudinary if provided
+      let photoUrl: string | undefined;
+      if (file) {
+        // Delete old photo if exists
+        if (existingMeal.photo) {
+          try {
+            const publicId = this.cloudinaryService.extractPublicId(existingMeal.photo);
+            if (publicId) {
+              await this.cloudinaryService.deleteFile(publicId);
+            }
+          } catch (error) {
+            this.logger.warn('Failed to delete old photo, continuing with upload', context, {
+              mealId: id,
+              error: error.message,
+            });
+          }
+        }
+        
+        photoUrl = await this.cloudinaryService.uploadImage(file);
       }
 
       // Prepare update data
@@ -315,7 +355,9 @@ export class MealService {
         updateData.note = dto.note?.trim() || null;
       }
 
-      if (dto.photo !== undefined) {
+      if (photoUrl !== undefined) {
+        updateData.photo = photoUrl;
+      } else if (dto.photo !== undefined) {
         updateData.photo = dto.photo?.trim() || null;
       }
 
@@ -324,7 +366,6 @@ export class MealService {
       if (dto.carbs !== undefined) updateData.carbs = dto.carbs;
       if (dto.fats !== undefined) updateData.fats = dto.fats;
       if (dto.isCompleted !== undefined) updateData.isCompleted = dto.isCompleted;
-
 
       if (dto.time !== undefined) {
         if (dto.time === null) {
@@ -350,7 +391,8 @@ export class MealService {
       this.logger.log('Meal updated successfully', context, { 
         userId, 
         mealId: id,
-        updatedFields: Object.keys(dto) 
+        updatedFields: Object.keys(dto),
+        hasNewPhoto: !!file,
       });
 
       return updatedMeal;
@@ -372,6 +414,7 @@ export class MealService {
       throw new BadRequestException('Failed to update meal');
     }
   }
+
 
   // Soft Delete Meal
   async remove(id: string, userId: string) {
@@ -396,6 +439,21 @@ export class MealService {
       if (!existingMeal) {
         this.logger.warn('Meal not found for deletion', context, { userId, mealId: id });
         throw new NotFoundException('Meal not found');
+      }
+
+      // Delete photo from Cloudinary if exists
+      if (existingMeal.photo) {
+        try {
+          const publicId = this.cloudinaryService.extractPublicId(existingMeal.photo);
+          if (publicId) {
+            await this.cloudinaryService.deleteFile(publicId);
+          }
+        } catch (error) {
+          this.logger.warn('Failed to delete photo from Cloudinary, continuing with soft delete', context, {
+            mealId: id,
+            error: error.message,
+          });
+        }
       }
 
       const deletedMeal = await this.prisma.meal.update({

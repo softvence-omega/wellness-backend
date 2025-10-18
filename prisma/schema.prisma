@@ -151,9 +151,9 @@ model Step {
   id         String     @id @default(cuid()) // Changed to CUID
   vitalId    String     @unique // Changed to String
   stepsCount Int
-  distance   Float
-  calories   Float
-  activeMin  Int
+  distance   Float?
+  calories   Float?
+  activeMin  Int?
   message    Json?
   vital      VitalSigns @relation(fields: [vitalId], references: [id])
 

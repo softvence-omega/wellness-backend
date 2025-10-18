@@ -5,6 +5,7 @@ import { MealController } from './meals.controller';
 import { MealService } from './meals.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CustomLogger } from 'src/logger/logger.service';
+import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
 
 
 @Module({
@@ -18,6 +19,7 @@ import { CustomLogger } from 'src/logger/logger.service';
       }),
       inject: [ConfigService],
     }),
+    CloudinaryModule,
     ConfigModule, // Import ConfigModule if needed
   ],
   controllers: [MealController],

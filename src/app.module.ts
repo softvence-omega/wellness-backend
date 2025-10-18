@@ -14,14 +14,15 @@ import { AuthModule } from './modules/auth/auth.module';
 import { GoogleService } from './modules/google/google.service';
 import { ConfigModule } from '@nestjs/config';
 import { MealsModule } from './modules/meals/meals.module';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
 // import { FitbitModule } from './modules/fitbit/fitbit.module';
 // import { NudgeModule } from './modules/nudge/nudge.module';
 // import { StravaModule } from './modules/strava/strava.module';
 
 @Module({
   imports: [ConfigModule.forRoot({
-    isGlobal: true, // 👈 makes ConfigService available everywhere
-  }), AuthModule, DeviceIntegrationModule, LabReportsModule, ProfileModule,MealsModule, TipsModule, VitalsModule, ],
+    isGlobal: true, 
+  }), AuthModule, DeviceIntegrationModule, LabReportsModule, ProfileModule,MealsModule, TipsModule, VitalsModule,CloudinaryModule ],
   controllers: [],
   providers: [GoogleService],
 })
