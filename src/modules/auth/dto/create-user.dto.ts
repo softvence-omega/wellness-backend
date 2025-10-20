@@ -1,5 +1,14 @@
-import { IsEmail, IsString, MinLength, MaxLength, IsNotEmpty, IsOptional, IsBoolean, IsEnum } from 'class-validator';
-import { Language } from '@prisma/client';
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  MaxLength,
+  IsNotEmpty,
+  IsOptional,
+  IsBoolean,
+  IsEnum,
+} from 'class-validator';
+import { Gender, Language } from '@prisma/client';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateUserDto {
@@ -59,4 +68,37 @@ export class CreateUserDto {
   @IsBoolean({ message: 'isEnableNotification must be a boolean' })
   @IsOptional()
   isEnableNotification?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'User height in cm',
+    example: 180,
+    default: null,
+  })
+  @IsOptional()
+  height?: number;
+
+  @ApiPropertyOptional({
+    description: 'User weight in kg',
+    example: 75,
+    default: null,
+  })
+  @IsOptional()
+  weight?: number;
+
+  @ApiPropertyOptional({
+    description: 'User date of birth',
+    example: '1990-01-01',
+    default: null,
+  })
+  @IsOptional()
+  dateOfBirth?: Date;
+
+  @ApiPropertyOptional({
+    description: 'User gender',
+    example: 'male',
+    default: null,
+  })
+  @IsOptional()
+  @IsEnum(Gender, { message: 'Gender must be one of: MALE, FEMALE, OTHER' })
+  gender?: Gender | null;
 }

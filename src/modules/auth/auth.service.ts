@@ -6,7 +6,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { MailService } from '../email/email.service';
-import { Language, Role } from '@prisma/client';
+import { Language, Role, Gender } from '@prisma/client';
 import axios from 'axios';
 import * as jwt from 'jsonwebtoken';
 import jwkToPem from 'jwk-to-pem';
@@ -127,6 +127,10 @@ export class AuthService {
               fullName: dto.fullName,
               language: (dto.language as Language) || Language.EN,
               isEnableNotification: dto.isEnableNotification ?? false,
+              height: dto.height ?? null,
+              weight: dto.weight ?? null,
+              dateOfBirth: dto.dateOfBirth ?? null,
+              gender: dto.gender ?? null,
             },
           },
           isAgreeTerms: dto.isAgreeTerms ?? false,
