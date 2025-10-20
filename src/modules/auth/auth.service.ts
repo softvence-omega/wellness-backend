@@ -114,6 +114,7 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
+    
 
     const user = await this.prisma.$transaction(async (prisma) => {
       return prisma.user.create({
@@ -139,9 +140,13 @@ export class AuthService {
           updatedAt: true,
         },
       });
-    });
 
-    return { message: 'User registered successfully', user };
+ 
+    });
+    const tokens = await this.generateTokens(user.id, user.email, user.role);
+    await this.saveRefreshToken(user.id, tokens.refreshToken);
+
+    return { message: 'User registered successfully', user, tokens };
   }
 
    async registerAdmin(dto: CreateUserDto, secretKey: string): Promise<{ message: string; user: any }> {
