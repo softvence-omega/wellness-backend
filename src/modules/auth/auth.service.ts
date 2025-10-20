@@ -131,6 +131,7 @@ export class AuthService {
               weight: dto.weight ?? null,
               dateOfBirth: dto.dateOfBirth ?? null,
               gender: dto.gender ?? null,
+              healthGoal: dto.healthGoal ?? null,
             },
           },
           isAgreeTerms: dto.isAgreeTerms ?? false,

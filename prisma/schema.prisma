@@ -37,6 +37,7 @@ model User {
   profile                 Profile?
   tips                    Tip[]
   vitalSigns              VitalSigns?
+  emotionReactions       EmotionReaction[]
 
   @@index([createdAt])
 }
@@ -58,6 +59,29 @@ model Profile {
   user                 User        @relation(fields: [userId], references: [id])
 
   @@index([userId])
+}
+
+model EmotionReaction {
+  id        String   @id @default(uuid()) @map("_id")
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  emoji     String   // Facebook-like: "😍", "😂", "😮", "😢", "😡", "👍"
+  emotion   String   // Auto-mapped: "Love", "Haha", "Wow", "Sad", "Angry", "Like"
+  
+  postId    String?  
+  storyId   String?  
+  messageId String?  
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([postId])
+  @@index([createdAt])
+  @@index([emoji])
+  
+  @@unique([userId, postId]) // One reaction per user per post
 }
 
 model Notification {

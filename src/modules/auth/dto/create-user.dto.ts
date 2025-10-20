@@ -8,7 +8,7 @@ import {
   IsBoolean,
   IsEnum,
 } from 'class-validator';
-import { Gender, Language } from '@prisma/client';
+import { Gender, HealthGoal, Language } from '@prisma/client';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateUserDto {
@@ -101,4 +101,16 @@ export class CreateUserDto {
   @IsOptional()
   @IsEnum(Gender, { message: 'Gender must be one of: MALE, FEMALE, OTHER' })
   gender?: Gender | null;
+  
+
+  @ApiPropertyOptional({
+    description: 'User health goal',
+    example: 'Lose weight',
+    maxLength: 255,
+    default: null,
+  })
+  @IsString({ message: 'Health goal must be a string' })
+  @IsOptional()
+  @IsEnum(HealthGoal, { message: 'Invalid health goal' })
+  healthGoal?: HealthGoal | null;
 }
