@@ -15,6 +15,8 @@ import { GoogleService } from './modules/google/google.service';
 import { ConfigModule } from '@nestjs/config';
 import { MealsModule } from './modules/meals/meals.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { EmotionsModule } from './modules/emotion/emotions.module';
+import { HealthDataModule } from './modules/watch-data/watch-data.module';
 // import { FitbitModule } from './modules/fitbit/fitbit.module';
 // import { NudgeModule } from './modules/nudge/nudge.module';
 // import { StravaModule } from './modules/strava/strava.module';
@@ -22,7 +24,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
 @Module({
   imports: [ConfigModule.forRoot({
     isGlobal: true, 
-  }), AuthModule, DeviceIntegrationModule, LabReportsModule, ProfileModule,MealsModule, TipsModule, VitalsModule,CloudinaryModule ],
+  }), AuthModule, DeviceIntegrationModule, LabReportsModule, ProfileModule,MealsModule, TipsModule, VitalsModule,CloudinaryModule, EmotionsModule, HealthDataModule ],
   controllers: [],
   providers: [GoogleService],
 })

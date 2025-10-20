@@ -36,8 +36,9 @@ model User {
   nudges                  Nudge[]
   profile                 Profile?
   tips                    Tip[]
-  vitalSigns              VitalSigns?
-  emotionReactions       EmotionReaction[]
+  HealthDatas            HealthData[]
+  // vitalSigns              VitalSigns?
+  emotionEntries       EmotionEntry[]
 
   @@index([createdAt])
 }
@@ -61,27 +62,20 @@ model Profile {
   @@index([userId])
 }
 
-model EmotionReaction {
+model EmotionEntry {
   id        String   @id @default(uuid()) @map("_id")
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  
-  emoji     String   // Facebook-like: "😍", "😂", "😮", "😢", "😡", "👍"
-  emotion   String   // Auto-mapped: "Love", "Haha", "Wow", "Sad", "Angry", "Like"
-  
-  postId    String?  
-  storyId   String?  
-  messageId String?  
-  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emoji     String
+  emotion   String
+  note      String?
+  intensity Int?      @default(5)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId])
-  @@index([postId])
   @@index([createdAt])
   @@index([emoji])
-  
-  @@unique([userId, postId]) // One reaction per user per post
 }
 
 model Notification {
@@ -144,69 +138,163 @@ model Nudge {
   @@index([date])
 }
 
-model VitalSigns {
-  id         String             @id @default(cuid()) // Changed to CUID
-  userId     String             @unique // Changed to String
-  dataFrom   String
-  additional AdditionalMetrics?
-  heartRate  HeartRate?
-  sleep      Sleep?
-  step       Step?
-  user       User               @relation(fields: [userId], references: [id])
+model HealthData {
+  id             String        @id @default(cuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Core Health Metrics from Apple Watch
+  steps          Int?
+  heartRate      Float?
+  activeCalories Float?
+  restingHeartRate Float?
+  heartRateVariability Float?
+  
+  
+  // Sleep Data (detailed from Apple Watch)
+  sleepData      SleepData?
+  
+  // Workout Data
+  workoutData    WorkoutData?
+  
+  // Apple HealthKit Metadata
+  dataSource     String?       // "com.apple.health"
+  deviceName     String?       // "Apple Watch"
+  syncSessionId  String?       // For tracking sync sessions
+  
+  // Data Quality Flags
+  isManualEntry  Boolean       @default(false)
+  dataQuality    DataQuality   @default(GOOD)
+  
+  // Timestamps
+  startTime      DateTime      // When the data recording started
+  endTime        DateTime      // When the data recording ended
+  fetchTime      DateTime      @default(now()) // When we synced the data
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   @@index([userId])
+  @@index([startTime])
+  @@index([endTime])
+  @@index([fetchTime])
+  @@index([dataSource])
+  @@unique([userId, startTime, endTime, dataSource]) // Prevent duplicate syncs
 }
 
-model HeartRate {
-  id        String     @id @default(cuid()) // Changed to CUID
-  vitalId   String     @unique // Changed to String
-  heartRate Int?
-  updatedAt DateTime   @default(now()) @updatedAt
-  resting   Int?
-  average   Int?
-  peak      Int?
-  message   Json?
-  vital     VitalSigns @relation(fields: [vitalId], references: [id])
+model SleepData {
+  id             String      @id @default(cuid())
+  healthDataId   String      @unique
+  healthData     HealthData  @relation(fields: [healthDataId], references: [id], onDelete: Cascade)
+  
+  // Detailed Sleep Stages from Apple Watch
+  deepMinutes    Float?
+  lightMinutes   Float?
+  remMinutes     Float?
+  awakeMinutes   Float?
+  coreMinutes    Float?
+  
+  // Sleep Quality Metrics
+  sleepEfficiency Float?     // Percentage of time actually asleep
+  timeInBed       Float?     // Total time in bed (minutes)
+  sleepLatency    Float?     // Time to fall asleep (minutes)
+  
+  // Apple Watch Specific
+  bedtimeStart    DateTime?
+  bedtimeEnd      DateTime?
+  consistency     Float?     // Sleep schedule consistency
+  
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 
-  @@index([vitalId])
+  @@index([healthDataId])
 }
 
-model Step {
-  id         String     @id @default(cuid()) // Changed to CUID
-  vitalId    String     @unique // Changed to String
-  stepsCount Int
-  distance   Float?
-  calories   Float?
-  activeMin  Int?
-  message    Json?
-  vital      VitalSigns @relation(fields: [vitalId], references: [id])
+model WorkoutData {
+  id             String          @id @default(cuid())
+  healthDataId   String          @unique
+  healthData     HealthData      @relation(fields: [healthDataId], references: [id], onDelete: Cascade)
+  
+  // Workout Information
+  workoutType    WorkoutType?
+  duration       Float?          // in minutes
+  totalDistance  Float?          // in meters
+  totalEnergy    Float?          // calories burned
+  
+  // Heart Rate during workout
+  avgHeartRate   Float?
+  maxHeartRate   Float?
+  minHeartRate   Float?
+  
+  // GPS Data
+  elevation      Float?
+  routeData      Json?           // GPS coordinates
+  
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
-  @@index([vitalId])
+  @@index([healthDataId])
 }
 
-model Sleep {
-  id           String     @id @default(cuid()) // Changed to CUID
-  vitalId      String     @unique // Changed to String
-  sleepStartAt DateTime
-  sleepEndAt   DateTime
-  deep         Float?
-  rem          Float?
-  light        Float?
-  message      Json?
-  vital        VitalSigns @relation(fields: [vitalId], references: [id])
 
-  @@index([vitalId])
-}
+// model VitalSigns {
+//   id         String             @id @default(cuid()) // Changed to CUID
+//   userId     String             @unique // Changed to String
+//   dataFrom   String
+//   additional AdditionalMetrics?
+//   heartRate  HeartRate?
+//   sleep      Sleep?
+//   step       Step?
+//   user       User               @relation(fields: [userId], references: [id])
+
+//   @@index([userId])
+// }
+
+// model HeartRate {
+//   id        String     @id @default(cuid()) // Changed to CUID
+//   vitalId   String     @unique // Changed to String
+//   heartRate Int?
+//   updatedAt DateTime   @default(now()) @updatedAt
+//   resting   Int?
+//   average   Int?
+//   peak      Int?
+//   message   Json?
+//   vital     VitalSigns @relation(fields: [vitalId], references: [id])
+
+//   @@index([vitalId])
+// }
+
+// model Step {
+//   id         String     @id @default(cuid()) // Changed to CUID
+//   vitalId    String     @unique // Changed to String
+//   stepsCount Int
+//   distance   Float?
+//   calories   Float?
+//   activeMin  Int?
+//   message    Json?
+//   vital      VitalSigns @relation(fields: [vitalId], references: [id])
+
+//   @@index([vitalId])
+// }
+
+// model Sleep {
+//   id           String     @id @default(cuid()) // Changed to CUID
+//   vitalId      String     @unique // Changed to String
+//   sleepStartAt DateTime
+//   sleepEndAt   DateTime
+//   deep         Float?
+//   rem          Float?
+//   light        Float?
+//   message      Json?
+//   vital        VitalSigns @relation(fields: [vitalId], references: [id])
+
+//   @@index([vitalId])
+// }
 
 model AdditionalMetrics {
   id                   String     @id @default(cuid()) // Changed to CUID
-  vitalId              String     @unique // Changed to String
   heartRateVariability Int
   bodyTemp             Float
   respiratoryRate      Int
-  vital                VitalSigns @relation(fields: [vitalId], references: [id])
-
-  @@index([vitalId])
 }
 
 model Meal {
@@ -352,5 +440,30 @@ enum MealType {
   SNACK
   PRE_WORKOUT
   POST_WORKOUT
+  OTHER
+}
+
+enum DataQuality {
+  EXCELLENT
+  GOOD
+  FAIR
+  POOR
+  UNKNOWN
+}
+
+enum WorkoutType {
+  WALKING
+  RUNNING
+  CYCLING
+  SWIMMING
+  HIKING
+  YOGA
+  STRENGTH_TRAINING
+  HIGH_INTENSITY_INTERVAL_TRAINING
+  DANCE
+  FUNCTIONAL_STRENGTH_TRAINING
+  TRADITIONAL_STRENGTH_TRAINING
+  CARDIO
+  MIXED_CARDIO
   OTHER
 }
