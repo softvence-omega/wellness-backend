@@ -1,9 +1,14 @@
+// src/lab-reports/lab-reports.module.ts
 import { Module } from '@nestjs/common';
-import { LabReportsController } from './lab-reports.controller';
-import { LabReportsService } from './lab-reports.service';
+import { PrismaModule } from 'src/prisma/prisma.module';
+import { MedicalReportsController } from './lab-reports.controller';
+import { MedicalReportsService } from './lab-reports.service';
+import { MedicalReportsRepository } from './medical-reports.repository';
 
 @Module({
-  controllers: [LabReportsController],
-  providers: [LabReportsService]
+  imports: [PrismaModule],
+  controllers: [MedicalReportsController],
+  providers: [MedicalReportsService, MedicalReportsRepository],
+  exports: [MedicalReportsService],
 })
-export class LabReportsModule {}
+export class MedicalLabReportsModule {}

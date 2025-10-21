@@ -39,6 +39,7 @@ model User {
   HealthDatas            HealthData[]
   // vitalSigns              VitalSigns?
   emotionEntries       EmotionEntry[]
+  MedicalReports       MedicalReport[]
 
   @@index([createdAt])
 }
@@ -235,6 +236,28 @@ model WorkoutData {
   @@index([healthDataId])
 }
 
+model MedicalReport {
+  id          String     @id @default(cuid())
+  fileName    String     @unique @map("file_name")
+  fileUrl     String     @map("file_url")
+  reportType  ReportType @map("report_type")
+  patientName String     @map("patient_name")
+  reportDate  DateTime   @map("report_date")
+  labName     String?    @map("lab_name")
+  doctorName  String?    @map("doctor_name")
+  reportData  Json       @map("report_data") // Stores the structured lab values
+  userId      String
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  tips       Tip[]
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("medical_reports")
+  @@index([userId])
+  @@index([patientName])
+  @@index([reportType])
+  @@index([reportDate])
+}
 
 // model VitalSigns {
 //   id         String             @id @default(cuid()) // Changed to CUID
@@ -337,6 +360,8 @@ model Tip {
   nudgesId    String?    // Changed to String
   type        TipType
   message     String
+  medicalReportId   String?
+  medicalReport   MedicalReport? @relation(fields: [medicalReportId], references: [id])
   riskLevel   RiskLevel
   createdAt   DateTime   @default(now())
   labReport   LabReport? @relation(fields: [labReportId], references: [id])
@@ -465,5 +490,20 @@ enum WorkoutType {
   TRADITIONAL_STRENGTH_TRAINING
   CARDIO
   MIXED_CARDIO
+  OTHER
+}
+
+enum ReportType {
+  CBC
+  LFT
+  KFT
+  THYROID
+  MRI
+  CT_SCAN
+  X_RAY
+  ULTRASOUND
+  ECG
+  BLOOD_TEST
+  URINE_TEST
   OTHER
 }

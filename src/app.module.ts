@@ -2,9 +2,6 @@ import { Module } from '@nestjs/common';
 // import { ChatModule } from './modules/chat/chat.module';
 
 import { DeviceIntegrationModule } from './modules/device-integration/device-integration.module';
-import { LabReportsModule } from './modules/lab-reports/lab-reports.module';
-// import { MealsModule } from './modules/meals/meals.module';
-// import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ProfileModule } from './modules/profile/profile.module';
 
 import { TipsModule } from './modules/tips/tips.module';
@@ -17,6 +14,7 @@ import { MealsModule } from './modules/meals/meals.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { EmotionsModule } from './modules/emotion/emotions.module';
 import { HealthDataModule } from './modules/watch-data/watch-data.module';
+import { MedicalLabReportsModule } from './modules/lab-reports/lab-reports.module';
 // import { FitbitModule } from './modules/fitbit/fitbit.module';
 // import { NudgeModule } from './modules/nudge/nudge.module';
 // import { StravaModule } from './modules/strava/strava.module';
@@ -24,7 +22,7 @@ import { HealthDataModule } from './modules/watch-data/watch-data.module';
 @Module({
   imports: [ConfigModule.forRoot({
     isGlobal: true, 
-  }), AuthModule, DeviceIntegrationModule, LabReportsModule, ProfileModule,MealsModule, TipsModule, VitalsModule,CloudinaryModule, EmotionsModule, HealthDataModule ],
+  }), AuthModule, DeviceIntegrationModule, ProfileModule,MealsModule, TipsModule, VitalsModule,CloudinaryModule, EmotionsModule, HealthDataModule,MedicalLabReportsModule  ],
   controllers: [],
   providers: [GoogleService],
 })
