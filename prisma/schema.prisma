@@ -241,6 +241,7 @@ model MedicalReport {
   id          String     @id @default(cuid())
   fileName    String     @unique @map("file_name")
   fileUrl     String     @map("file_url")
+  publicId    String?    @map("public_id")
   reportType  ReportType @map("report_type")
   patientName String     @map("patient_name")
   reportDate  DateTime   @map("report_date")

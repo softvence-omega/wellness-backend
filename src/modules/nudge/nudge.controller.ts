@@ -1,4 +1,3 @@
-// src/nudges/nudges.controller.ts
 import {
   Controller,
   Get,
@@ -20,7 +19,12 @@ import { UpdateNudgeDto } from './dto/update-nudge.dto';
 import { UpdateNudgeProgressDto } from './dto/update-nudge-progress.dto';
 import { NudgeQueryDto } from './dto/nudge-query.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { NudgesService } from './nudge.service';
 
 @ApiTags('nudges')
@@ -30,29 +34,45 @@ import { NudgesService } from './nudge.service';
 export class NudgesController {
   constructor(private readonly nudgesService: NudgesService) {}
 
-@Post()
-create(@Request() req, @Body() createNudgeDto: CreateNudgeDto) {
-  
-  console.log('Request user:', req.user);
-  console.log('User ID:', req.user?.userId); // Changed from .id to .userId
-  console.log('User keys:', req.user ? Object.keys(req.user) : 'No user');
+  @Post()
+  create(@Request() req, @Body() createNudgeDto: CreateNudgeDto) {
+    console.log('Request user:', req.user);
+    console.log('User ID:', req.user?.userId);
+    console.log('User keys:', req.user ? Object.keys(req.user) : 'No user');
+    if (!req.user) {
+      throw new BadRequestException(
+        'User not authenticated - req.user is undefined',
+      );
+    }
 
-  // Check if user exists and has userId
-  if (!req.user) {
-    throw new BadRequestException('User not authenticated - req.user is undefined');
+    if (!req.user.userId) {
+      throw new BadRequestException(
+        `User ID is required. User object: ${JSON.stringify(req.user)}`,
+      );
+    }
+    return this.nudgesService.create(req.user.userId, createNudgeDto);
   }
 
-  if (!req.user.userId) { // Changed from .id to .userId
-    throw new BadRequestException(`User ID is required. User object: ${JSON.stringify(req.user)}`);
+  @Get()
+  @ApiOperation({ summary: 'Get all nudges for user with optional filters' })
+  @ApiResponse({ status: 200, description: 'Nudges retrieved successfully' })
+  findAll(@Request() req, @Query() query: NudgeQueryDto) {
+    console.log('Request user in findAll:', req.user);
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+
+    if (!userId) {
+      throw new BadRequestException('User ID not found in request');
+    }
+
+    return this.nudgesService.findAll(userId, query);
   }
-
-  return this.nudgesService.create(req.user.userId, createNudgeDto); // Changed from .id to .userId
-}
-
 
   @Get('today-progress')
   @ApiOperation({ summary: 'Get today progress' })
-  @ApiResponse({ status: 200, description: 'Today progress retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Today progress retrieved successfully',
+  })
   getTodayProgress(@Request() req) {
     return this.nudgesService.getTodayProgress(req.user.id);
   }
@@ -76,7 +96,11 @@ create(@Request() req, @Body() createNudgeDto: CreateNudgeDto) {
   @ApiOperation({ summary: 'Update a nudge' })
   @ApiResponse({ status: 200, description: 'Nudge updated successfully' })
   @ApiResponse({ status: 404, description: 'Nudge not found' })
-  update(@Request() req, @Param('id') id: string, @Body() updateNudgeDto: UpdateNudgeDto) {
+  update(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() updateNudgeDto: UpdateNudgeDto,
+  ) {
     return this.nudgesService.update(id, req.user.id, updateNudgeDto);
   }
 
@@ -89,7 +113,11 @@ create(@Request() req, @Body() createNudgeDto: CreateNudgeDto) {
     @Param('id') id: string,
     @Body() updateNudgeProgressDto: UpdateNudgeProgressDto,
   ) {
-    return this.nudgesService.updateProgress(id, req.user.id, updateNudgeProgressDto);
+    return this.nudgesService.updateProgress(
+      id,
+      req.user.id,
+      updateNudgeProgressDto,
+    );
   }
 
   @Delete(':id')
