@@ -36,10 +36,10 @@ model User {
   nudges                  Nudge[]
   profile                 Profile?
   tips                    Tip[]
-  HealthDatas            HealthData[]
+  HealthDatas             HealthData[]
   // vitalSigns              VitalSigns?
-  emotionEntries       EmotionEntry[]
-  MedicalReports       MedicalReport[]
+  emotionEntries          EmotionEntry[]
+  MedicalReports          MedicalReport[]
 
   @@index([createdAt])
 }
@@ -70,7 +70,7 @@ model EmotionEntry {
   emoji     String
   emotion   String
   note      String?
-  intensity Int?      @default(5)
+  intensity Int?     @default(5)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -122,11 +122,13 @@ model DeviceIntegration {
 
 model Nudge {
   id             String        @id @default(cuid()) // Changed to CUID
-  userId         String        // Changed to String
+  userId         String // Changed to String
   title          String
   category       NudgeCategory
   targetAmount   Float?
   consumedAmount Float?
+  remainingAmount Float?
+  completed      Boolean       @default(false)
   unit           String?
   date           DateTime      @default(now())
   createdAt      DateTime      @default(now())
@@ -140,98 +142,97 @@ model Nudge {
 }
 
 model HealthData {
-  id             String        @id @default(cuid())
-  userId         String
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  // Core Health Metrics from Apple Watch
-  steps          Int?
-  heartRate      Float?
-  activeCalories Float?
-  restingHeartRate Float?
-  heartRateVariability Float?
-  
-  
-  // Sleep Data (detailed from Apple Watch)
-  sleepData      SleepData?
-  
-  // Workout Data
-  workoutData    WorkoutData?
-  
-  // Apple HealthKit Metadata
-  dataSource     String?       // "com.apple.health"
-  deviceName     String?       // "Apple Watch"
-  syncSessionId  String?       // For tracking sync sessions
-  
-  // Data Quality Flags
-  isManualEntry  Boolean       @default(false)
-  dataQuality    DataQuality   @default(GOOD)
-  
-  // Timestamps
-  startTime      DateTime      // When the data recording started
-  endTime        DateTime      // When the data recording ended
-  fetchTime      DateTime      @default(now()) // When we synced the data
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // Core Health Metrics from Apple Watch
+  steps                Int?
+  heartRate            Float?
+  activeCalories       Float?
+  restingHeartRate     Float?
+  heartRateVariability Float?
+
+  // Sleep Data (detailed from Apple Watch)
+  sleepData SleepData?
+
+  // Workout Data
+  workoutData WorkoutData?
+
+  // Apple HealthKit Metadata
+  dataSource    String? // "com.apple.health"
+  deviceName    String? // "Apple Watch"
+  syncSessionId String? // For tracking sync sessions
+
+  // Data Quality Flags
+  isManualEntry Boolean     @default(false)
+  dataQuality   DataQuality @default(GOOD)
+
+  // Timestamps
+  startTime DateTime // When the data recording started
+  endTime   DateTime // When the data recording ended
+  fetchTime DateTime @default(now()) // When we synced the data
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, startTime, endTime, dataSource]) // Prevent duplicate syncs
   @@index([userId])
   @@index([startTime])
   @@index([endTime])
   @@index([fetchTime])
   @@index([dataSource])
-  @@unique([userId, startTime, endTime, dataSource]) // Prevent duplicate syncs
 }
 
 model SleepData {
-  id             String      @id @default(cuid())
-  healthDataId   String      @unique
-  healthData     HealthData  @relation(fields: [healthDataId], references: [id], onDelete: Cascade)
-  
+  id           String     @id @default(cuid())
+  healthDataId String     @unique
+  healthData   HealthData @relation(fields: [healthDataId], references: [id], onDelete: Cascade)
+
   // Detailed Sleep Stages from Apple Watch
-  deepMinutes    Float?
-  lightMinutes   Float?
-  remMinutes     Float?
-  awakeMinutes   Float?
-  coreMinutes    Float?
-  
+  deepMinutes  Float?
+  lightMinutes Float?
+  remMinutes   Float?
+  awakeMinutes Float?
+  coreMinutes  Float?
+
   // Sleep Quality Metrics
-  sleepEfficiency Float?     // Percentage of time actually asleep
-  timeInBed       Float?     // Total time in bed (minutes)
-  sleepLatency    Float?     // Time to fall asleep (minutes)
-  
+  sleepEfficiency Float? // Percentage of time actually asleep
+  timeInBed       Float? // Total time in bed (minutes)
+  sleepLatency    Float? // Time to fall asleep (minutes)
+
   // Apple Watch Specific
-  bedtimeStart    DateTime?
-  bedtimeEnd      DateTime?
-  consistency     Float?     // Sleep schedule consistency
-  
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  bedtimeStart DateTime?
+  bedtimeEnd   DateTime?
+  consistency  Float? // Sleep schedule consistency
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([healthDataId])
 }
 
 model WorkoutData {
-  id             String          @id @default(cuid())
-  healthDataId   String          @unique
-  healthData     HealthData      @relation(fields: [healthDataId], references: [id], onDelete: Cascade)
-  
+  id           String     @id @default(cuid())
+  healthDataId String     @unique
+  healthData   HealthData @relation(fields: [healthDataId], references: [id], onDelete: Cascade)
+
   // Workout Information
-  workoutType    WorkoutType?
-  duration       Float?          // in minutes
-  totalDistance  Float?          // in meters
-  totalEnergy    Float?          // calories burned
-  
+  workoutType   WorkoutType?
+  duration      Float? // in minutes
+  totalDistance Float? // in meters
+  totalEnergy   Float? // calories burned
+
   // Heart Rate during workout
-  avgHeartRate   Float?
-  maxHeartRate   Float?
-  minHeartRate   Float?
-  
+  avgHeartRate Float?
+  maxHeartRate Float?
+  minHeartRate Float?
+
   // GPS Data
-  elevation      Float?
-  routeData      Json?           // GPS coordinates
-  
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  elevation Float?
+  routeData Json? // GPS coordinates
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([healthDataId])
 }
@@ -249,14 +250,14 @@ model MedicalReport {
   userId      String
   createdAt   DateTime   @default(now()) @map("created_at")
   updatedAt   DateTime   @updatedAt @map("updated_at")
-  tips       Tip[]
+  tips        Tip[]
   user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("medical_reports")
   @@index([userId])
   @@index([patientName])
   @@index([reportType])
   @@index([reportDate])
+  @@map("medical_reports")
 }
 
 // model VitalSigns {
@@ -314,7 +315,7 @@ model MedicalReport {
 // }
 
 model AdditionalMetrics {
-  id                   String     @id @default(cuid()) // Changed to CUID
+  id                   String @id @default(cuid()) // Changed to CUID
   heartRateVariability Int
   bodyTemp             Float
   respiratoryRate      Int
@@ -322,12 +323,12 @@ model AdditionalMetrics {
 
 model Meal {
   id          String    @id @default(cuid()) // Changed to CUID
-  userId      String    // Changed to String
+  userId      String // Changed to String
   photo       String?
   name        String
   mealType    MealType
   isCompleted Boolean   @default(false)
-  description  String?
+  description String?
   note        String?
   calories    Float?
   protein     Float?
@@ -344,29 +345,29 @@ model Meal {
 }
 
 model LabReport {
-  id     String    @id @default(cuid()) // Changed to CUID
-  userId String    // Changed to String
+  id     String  @id @default(cuid()) // Changed to CUID
+  userId String // Changed to String
   photo  String?
-  user   User      @relation(fields: [userId], references: [id])
+  user   User    @relation(fields: [userId], references: [id])
   tips   Tip[]
 
   @@index([userId])
 }
 
 model Tip {
-  id          String     @id @default(cuid()) // Changed to CUID
-  userId      String     // Changed to String
-  labReportId String?    // Changed to String
-  nudgesId    String?    // Changed to String
-  type        TipType
-  message     String
-  medicalReportId   String?
+  id              String         @id @default(cuid()) // Changed to CUID
+  userId          String // Changed to String
+  labReportId     String? // Changed to String
+  nudgesId        String? // Changed to String
+  type            TipType
+  message         String
+  medicalReportId String?
   medicalReport   MedicalReport? @relation(fields: [medicalReportId], references: [id])
-  riskLevel   RiskLevel
-  createdAt   DateTime   @default(now())
-  labReport   LabReport? @relation(fields: [labReportId], references: [id])
-  nudges      Nudge?     @relation(fields: [nudgesId], references: [id])
-  user        User       @relation(fields: [userId], references: [id])
+  riskLevel       RiskLevel
+  createdAt       DateTime       @default(now())
+  labReport       LabReport?     @relation(fields: [labReportId], references: [id])
+  nudges          Nudge?         @relation(fields: [nudgesId], references: [id])
+  user            User           @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([labReportId])
@@ -374,13 +375,13 @@ model Tip {
 }
 
 model Conversation {
-  id        String    @id @default(cuid()) // Changed to CUID
+  id        String   @id @default(cuid()) // Changed to CUID
   title     String
-  userId    String    // Changed to String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @default(now()) @updatedAt
+  userId    String // Changed to String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
   chats     Chat[]
-  user      User      @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([createdAt])
@@ -388,8 +389,8 @@ model Conversation {
 
 model Chat {
   id             String       @id @default(cuid()) // Changed to CUID
-  conversationId String       // Changed to String
-  senderId       String       // Changed to String
+  conversationId String // Changed to String
+  senderId       String // Changed to String
   type           MessageType
   content        String?
   createdAt      DateTime     @default(now())
