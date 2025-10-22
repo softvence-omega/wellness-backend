@@ -1,41 +1,6 @@
 // types/nudge.types.ts
 import { NudgeCategory, NudgeUnit, TipType, RiskLevel } from '@prisma/client';
 
-/*
-export enum NudgeCategory {
-  HYDRATION = 'HYDRATION',
-  SLEEP = 'SLEEP', 
-  MOVEMENT = 'MOVEMENT',
-  WEIGHT = 'WEIGHT',
-  OTHER = 'OTHER'
-}
-
-export enum NudgeUnit {
-  ML = 'ML',
-  LITERS = 'LITERS',
-  HOURS = 'HOURS',
-  MINUTES = 'MINUTES',
-  STEPS = 'STEPS',
-  KILOMETERS = 'KILOMETERS',
-  MILES = 'MILES',
-  KG = 'KG',
-  POUNDS = 'POUNDS',
-  CALORIES = 'CALORIES'
-}
-
-export enum TipType {
-  LAB_REPORT = 'LAB_REPORT',
-  NUDGES = 'NUDGES'
-}
-
-export enum RiskLevel {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH'
-}
-*/
-
-// Your interfaces remain the same but use Prisma enums
 export interface NudgeResponse {
   id: string;
   userId: string;

@@ -30,26 +30,24 @@ import { NudgesService } from './nudge.service';
 export class NudgesController {
   constructor(private readonly nudgesService: NudgesService) {}
 
-  @Post()
-  create(@Request() req, @Body() createNudgeDto: CreateNudgeDto) {
-    console.log('=== CREATE ENDPOINT DEBUG ===');
-    console.log('Request user:', req.user);
-    console.log('User ID:', req.user?.id);
-    console.log('User keys:', req.user ? Object.keys(req.user) : 'No user');
-    console.log('=======================');
+@Post()
+create(@Request() req, @Body() createNudgeDto: CreateNudgeDto) {
+  
+  console.log('Request user:', req.user);
+  console.log('User ID:', req.user?.userId); // Changed from .id to .userId
+  console.log('User keys:', req.user ? Object.keys(req.user) : 'No user');
 
-    // Check if user exists and has id
-    if (!req.user) {
-      throw new BadRequestException('User not authenticated - req.user is undefined');
-    }
-
-    if (!req.user.id) {
-      throw new BadRequestException(`User ID is required. User object: ${JSON.stringify(req.user)}`);
-    }
-
-    return this.nudgesService.create(req.user.id, createNudgeDto);
+  // Check if user exists and has userId
+  if (!req.user) {
+    throw new BadRequestException('User not authenticated - req.user is undefined');
   }
 
+  if (!req.user.userId) { // Changed from .id to .userId
+    throw new BadRequestException(`User ID is required. User object: ${JSON.stringify(req.user)}`);
+  }
+
+  return this.nudgesService.create(req.user.userId, createNudgeDto); // Changed from .id to .userId
+}
 
 
   @Get('today-progress')

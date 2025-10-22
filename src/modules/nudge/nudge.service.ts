@@ -18,12 +18,11 @@ export class NudgesService {
 
   async create(userId: string, createNudgeDto: CreateNudgeDto): Promise<NudgeResponse> {
     try {
-      // Validate userId
+
       if (!userId) {
         throw new BadRequestException('User ID is required');
       }
 
-      // Verify user exists
       const userExists = await this.prisma.user.findUnique({
         where: { id: userId },
         select: { id: true }
@@ -38,7 +37,6 @@ export class NudgesService {
         data: createNudgeDto 
       });
 
-      // Log the actual values being sent to Prisma
       this.logger.debug('Creating nudge with data:', {
         userId,
         title: createNudgeDto.title,
