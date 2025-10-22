@@ -6,6 +6,7 @@ import {
   Body,
   Param,
   Query,
+  NotFoundException,
 } from '@nestjs/common';
 import { CreateHealthDataDto } from './dto/create-health-data.dto';
 import { BatchSyncResponse, HealthDataResponse, HealthDataService, SyncStatusResponse } from './watch-data.service';
@@ -27,6 +28,8 @@ export class HealthDataController {
     return this.healthDataService.batchSyncAppleWatchData(healthDataArray);
   }
 
+  
+
   @Get('user/:userId')
   async getUserHealthData(
     @Param('userId') userId: string,
@@ -38,29 +41,40 @@ export class HealthDataController {
 
   // Add this to your controller temporarily
 @Get('user/:userId/debug')
-async debugUserHealthData(@Param('userId') userId: string) {
-  const allData = await this.prisma.healthData.findMany({
-    where: { userId },
-    include: {
-      sleepData: true,
-      workoutData: true,
-    },
-    orderBy: { startTime: 'desc' },
-  });
+  async debugUserHealthData(@Param('userId') userId: string) {
+    const allData = await this.healthDataService['prisma'].healthData.findMany({
+      where: { userId },
+      include: {
+        sleepData: true,
+        workoutData: true,
+      },
+      orderBy: { startTime: 'desc' },
+    });
 
-  return {
-    totalRecords: allData.length,
-    data: allData.map(item => ({
-      id: item.id,
-      startTime: item.startTime,
-      endTime: item.endTime,
-      steps: item.steps,
-      heartRate: item.heartRate,
-      createdAt: item.createdAt
-    }))
-  };
-}
+    if (!allData.length) {
+      throw new NotFoundException(`No health data found for user ID ${userId}`);
+    }
 
+    return {
+      totalRecords: allData.length,
+      data: allData.map(item => ({
+        id: item.id,
+        startTime: item.startTime,
+        endTime: item.endTime,
+        steps: item.steps,
+        heartRate: item.heartRate,
+        activeCalories: item.activeCalories,
+        restingHeartRate: item.restingHeartRate,
+        heartRateVariability: item.heartRateVariability,
+        dataSource: item.dataSource,
+        deviceName: item.deviceName,
+        syncSessionId: item.syncSessionId,
+        sleepData: item.sleepData,
+        workoutData: item.workoutData,
+        createdAt: item.createdAt,
+      })),
+    };
+  }
   @Get('user/:userId/today')
   async getTodayHealthData(@Param('userId') userId: string): Promise<HealthDataResponse> {
     const today = new Date().toISOString().split('T')[0];

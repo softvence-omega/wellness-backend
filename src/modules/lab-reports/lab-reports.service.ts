@@ -18,10 +18,11 @@ import {
 import { MedicalReportsRepository } from './medical-reports.repository';
 import { CreateMedicalReportDto } from './dto/create-medical-report.dto';
 import { UpdateMedicalReportDto } from './dto/update-medical-report.dto';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Injectable()
 export class MedicalReportsService {
-  constructor(private readonly repository: MedicalReportsRepository) {}
+  constructor(private readonly repository: MedicalReportsRepository, private readonly cloudinaryService: CloudinaryService,) {}
 
   async create(
     createMedicalReportDto: CreateMedicalReportDto,
@@ -58,6 +59,111 @@ export class MedicalReportsService {
       throw new InternalServerErrorException(error.message);
     }
   }
+
+//////////// NEW METHOD ////////////
+// async uploadFile(
+//     dto: CreateMedicalReportDto,
+//     userId: string,
+//     file: Express.Multer.File,
+//   ): Promise<IMedicalReport> {
+//     // Validate file
+//     if (!file) {
+//       throw new BadRequestException('File is required');
+//     }
+
+//     // Check file name uniqueness
+//     const fileNameExists = await this.repository.checkFileNameExists(dto.fileName, userId);
+//     if (fileNameExists) {
+//       throw new ConflictException(`A file with name '${dto.fileName}' already exists`);
+//     }
+
+//     // Upload to Cloudinary
+//     let fileUrl = '';
+//     let publicId = '';
+//     try {
+//       const uploadResult = await this.cloudinaryService.uploadFile(file);
+//       fileUrl = uploadResult.secure_url;
+//       publicId = uploadResult.public_id;
+//     } catch (error) {
+//       throw new InternalServerErrorException(`Failed to upload file: ${error.message}`);
+//     }
+
+//     const createData: ICreateMedicalReport = {
+//       fileName: dto.fileName,
+//       fileUrl,
+//       publicId,
+//       userId,
+//       reportType: 'OTHER', // Default for compatibility
+//       reportData: {}, // Default empty JSON
+//     };
+
+//     try {
+//       return await this.repository.create(createData);
+//     } catch (error) {
+//       // Clean up Cloudinary if DB operation fails
+//       await this.cloudinaryService.deleteFile(publicId, file.mimetype.includes('pdf') ? 'raw' : 'image');
+//       throw new InternalServerErrorException(`Failed to create file record: ${error.message}`);
+//     }
+//   }
+
+//   async getFileById(id: string, userId: string): Promise<IMedicalReport> {
+//     try {
+//       const report = await this.repository.findById(id, userId);
+//       return {
+//         id: report.id,
+//         fileName: report.fileName,
+//         fileUrl: report.fileUrl,
+//         publicId: report.publicId,
+//         userId: report.userId,
+//         createdAt: report.createdAt,
+//         updatedAt: report.updatedAt,
+//       };
+//     } catch (error) {
+//       if (error instanceof NotFoundException) {
+//         throw error;
+//       }
+//       throw new InternalServerErrorException(error.message);
+//     }
+//   }
+
+//   async getAllFiles(filters: IMedicalReportFilters): Promise<IPaginatedMedicalReports> {
+//     try {
+//       const result = await this.repository.findAll(filters);
+//       return {
+//         reports: result.reports.map(report => ({
+//           id: report.id,
+//           fileName: report.fileName,
+//           fileUrl: report.fileUrl,
+//           publicId: report.publicId,
+//           userId: report.userId,
+//           createdAt: report.createdAt,
+//           updatedAt: report.updatedAt,
+//         })),
+//         pagination: result.pagination,
+//       };
+//     } catch (error) {
+//       throw new InternalServerErrorException(error.message);
+//     }
+//   }
+
+//   async deleteFile(id: string, userId: string): Promise<void> {
+//     try {
+//       const report = await this.getFileById(id, userId);
+//       if (report.publicId) {
+//         await this.cloudinaryService.deleteFile(report.publicId, report.fileUrl.includes('.pdf') ? 'raw' : 'image');
+//       }
+//       await this.repository.delete(id, userId);
+//     } catch (error) {
+//       if (error instanceof NotFoundException) {
+//         throw error;
+//       }
+//       throw new InternalServerErrorException(error.message);
+//     }
+//   }
+
+
+  /////////////// END NEW METHOD /////////////
+  
 
   async findAll(filters: IMedicalReportFilters): Promise<IPaginatedMedicalReports> {
     try {

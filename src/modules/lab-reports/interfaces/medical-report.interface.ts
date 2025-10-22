@@ -23,11 +23,11 @@ export interface IMedicalReport {
   fileName: string;
   fileUrl: string;
   reportType: ReportType;
-  patientName: string;
-  reportDate: Date;
+  patientName?: string;
+  reportDate?: Date;
   labName?: string | null;
   doctorName?: string | null;
-  reportData: JsonValue;  // Use the custom JsonValue type
+  reportData?: JsonValue;  // Use the custom JsonValue type
   userId: string;
   createdAt: Date;
   updatedAt: Date;

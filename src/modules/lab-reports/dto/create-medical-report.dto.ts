@@ -9,21 +9,25 @@ import { ReportType } from '@prisma/client';
 export class LabValueDto {
   @ApiProperty({ description: 'Name of the test' })
   @IsNotEmpty()
+   @IsOptional()
   @IsString()
   test_name: string;
 
   @ApiProperty({ description: 'Test value' })
   @IsNotEmpty()
+   @IsOptional()
   @IsNumber()
   value: number;
 
   @ApiProperty({ description: 'Unit of measurement' })
   @IsNotEmpty()
+   @IsOptional()
   @IsString()
   unit: string;
 
   @ApiProperty({ description: 'Reference ranges' })
   @IsNotEmpty()
+   @IsOptional()
   @IsString()
   ref_ranges: string;
 
@@ -39,11 +43,13 @@ export class LabValueDto {
 export class ReportDataDto {
   @ApiProperty({ description: 'Patient name from the report' })
   @IsNotEmpty()
+   @IsOptional()
   @IsString()
   patient_name: string;
 
   @ApiProperty({ description: 'Report date from the report' })
   @IsNotEmpty()
+  @IsOptional()
   @IsString()
   report_date: string;
 
@@ -53,6 +59,7 @@ export class ReportDataDto {
   })
   @IsNotEmpty()
   @IsArray()
+   @IsOptional()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => LabValueDto)
@@ -80,27 +87,32 @@ export class CreateMedicalReportDto {
 
   @ApiProperty({ enum: ReportType, description: 'Type of medical report' })
   @IsNotEmpty()
+   @IsOptional()
   @IsEnum(ReportType)
   reportType: ReportType;
 
   @ApiProperty({ description: 'Name of the patient' })
   @IsNotEmpty()
+   @IsOptional()
   @IsString()
   patientName: string;
 
   @ApiProperty({ description: 'Date when the report was generated' })
   @IsNotEmpty()
+   @IsOptional()
   @Type(() => Date)
   @IsDate()
   reportDate: Date;
 
   @ApiProperty({ required: false, description: 'Name of the laboratory' })
   @IsOptional()
+   @IsOptional()
   @IsString()
   labName?: string;
 
   @ApiProperty({ required: false, description: 'Name of the referring doctor' })
   @IsOptional()
+   @IsOptional()
   @IsString()
   doctorName?: string;
 
@@ -109,6 +121,7 @@ export class CreateMedicalReportDto {
     type: ReportDataDto 
   })
   @IsNotEmpty()
+   @IsOptional()
   @ValidateNested()
   @Type(() => ReportDataDto)
   reportData: ReportDataDto;

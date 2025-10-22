@@ -121,21 +121,21 @@ model DeviceIntegration {
 }
 
 model Nudge {
-  id             String        @id @default(cuid()) // Changed to CUID
-  userId         String // Changed to String
-  title          String
-  category       NudgeCategory
-  targetAmount   Float?
-  consumedAmount Float?
+  id              String        @id @default(cuid()) // Changed to CUID
+  userId          String // Changed to String
+  title           String
+  category        NudgeCategory
+  targetAmount    Float?
+  consumedAmount  Float?
   remainingAmount Float?
-  completed      Boolean       @default(false)
-  unit           NudgeUnit?
-  date           DateTime      @default(now())
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @default(now()) @updatedAt
-  isDeleted      Boolean       @default(false)
-  user           User          @relation(fields: [userId], references: [id])
-  tips           Tip[]
+  completed       Boolean       @default(false)
+  unit            NudgeUnit?
+  date            DateTime      @default(now())
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @default(now()) @updatedAt
+  isDeleted       Boolean       @default(false)
+  user            User          @relation(fields: [userId], references: [id])
+  tips            Tip[]
 
   @@index([userId, category])
   @@index([date])
@@ -242,12 +242,12 @@ model MedicalReport {
   fileName    String     @unique @map("file_name")
   fileUrl     String     @map("file_url")
   publicId    String?    @map("public_id")
-  reportType  ReportType @map("report_type")
-  patientName String     @map("patient_name")
-  reportDate  DateTime   @map("report_date")
+  reportType  ReportType? @map("report_type")
+  patientName String?     @map("patient_name")
+  reportDate  DateTime?   @map("report_date")
   labName     String?    @map("lab_name")
   doctorName  String?    @map("doctor_name")
-  reportData  Json       @map("report_data") // Stores the structured lab values
+  reportData  Json?      @map("report_data")
   userId      String
   createdAt   DateTime   @default(now()) @map("created_at")
   updatedAt   DateTime   @updatedAt @map("updated_at")
@@ -365,7 +365,7 @@ model Tip {
   medicalReportId String?
   medicalReport   MedicalReport? @relation(fields: [medicalReportId], references: [id])
   riskLevel       RiskLevel
-   isDeleted       Boolean        @default(false) 
+  isDeleted       Boolean        @default(false)
   createdAt       DateTime       @default(now())
   labReport       LabReport?     @relation(fields: [labReportId], references: [id])
   nudges          Nudge?         @relation(fields: [nudgesId], references: [id])
