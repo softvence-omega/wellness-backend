@@ -6,8 +6,6 @@ import {
   Body,
   Param,
   Query,
-  HttpCode,
-  HttpStatus,
 } from '@nestjs/common';
 import { CreateHealthDataDto } from './dto/create-health-data.dto';
 import { BatchSyncResponse, HealthDataResponse, HealthDataService, SyncStatusResponse } from './watch-data.service';

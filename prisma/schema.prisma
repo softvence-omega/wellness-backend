@@ -129,7 +129,7 @@ model Nudge {
   consumedAmount Float?
   remainingAmount Float?
   completed      Boolean       @default(false)
-  unit           String?
+  unit           NudgeUnit?
   date           DateTime      @default(now())
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @default(now()) @updatedAt
@@ -364,6 +364,7 @@ model Tip {
   medicalReportId String?
   medicalReport   MedicalReport? @relation(fields: [medicalReportId], references: [id])
   riskLevel       RiskLevel
+   isDeleted       Boolean        @default(false) 
   createdAt       DateTime       @default(now())
   labReport       LabReport?     @relation(fields: [labReportId], references: [id])
   nudges          Nudge?         @relation(fields: [nudgesId], references: [id])
@@ -507,4 +508,17 @@ enum ReportType {
   BLOOD_TEST
   URINE_TEST
   OTHER
+}
+
+enum NudgeUnit {
+  ML
+  LITERS
+  HOURS
+  MINUTES
+  STEPS
+  KILOMETERS
+  MILES
+  KG
+  POUNDS
+  CALORIES
 }

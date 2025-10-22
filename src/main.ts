@@ -50,18 +50,18 @@ async function bootstrap() {
           winston.format.simple(),
         ),
       }),
-      new winston.transports.File({ 
-        filename: 'logs/error.log', 
+      new winston.transports.File({
+        filename: 'logs/error.log',
         level: 'error',
         maxsize: 10 * 1024 * 1024,
         maxFiles: 5,
       }),
-      new winston.transports.File({ 
+      new winston.transports.File({
         filename: 'logs/combined.log',
         maxsize: 10 * 1024 * 1024,
         maxFiles: 5,
       }),
-      new winston.transports.File({ 
+      new winston.transports.File({
         filename: 'logs/mobile.log',
         maxsize: 10 * 1024 * 1024,
         maxFiles: 3,
@@ -70,7 +70,9 @@ async function bootstrap() {
   });
 
   try {
-    logger.log(`Starting Wellness API for Mobile & Web in ${env} environment...`);
+    logger.log(
+      `Starting Wellness API for Mobile & Web in ${env} environment...`,
+    );
 
     const app = await NestFactory.create(AppModule, {
       logger,
@@ -85,20 +87,26 @@ async function bootstrap() {
     const reflector = app.get(Reflector);
 
     // Enhanced Security Middlewares for Mobile & Web
-    app.use(helmet({
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: [`'self'`],
-          styleSrc: [`'self'`, `'unsafe-inline'`, 'https://fonts.googleapis.com'],
-          imgSrc: [`'self'`, 'data:', 'blob:', 'https:'],
-          scriptSrc: [`'self'`, `'unsafe-inline'`],
-          connectSrc: [`'self'`, 'https:', 'wss:'],
-          fontSrc: [`'self'`, 'https://fonts.gstatic.com'],
+    app.use(
+      helmet({
+        contentSecurityPolicy: {
+          directives: {
+            defaultSrc: [`'self'`],
+            styleSrc: [
+              `'self'`,
+              `'unsafe-inline'`,
+              'https://fonts.googleapis.com',
+            ],
+            imgSrc: [`'self'`, 'data:', 'blob:', 'https:'],
+            scriptSrc: [`'self'`, `'unsafe-inline'`],
+            connectSrc: [`'self'`, 'https:', 'wss:'],
+            fontSrc: [`'self'`, 'https://fonts.gstatic.com'],
+          },
         },
-      },
-      crossOriginEmbedderPolicy: false,
-      crossOriginResourcePolicy: { policy: "cross-origin" }, // For mobile apps
-    }));
+        crossOriginEmbedderPolicy: false,
+        crossOriginResourcePolicy: { policy: 'cross-origin' }, // For mobile apps
+      }),
+    );
 
     // Enhanced Rate Limiting for Mobile & Web
     const generalLimiter = rateLimit({
@@ -148,16 +156,18 @@ async function bootstrap() {
     app.use(generalLimiter);
 
     // Enhanced Compression for mobile networks
-    app.use(compression({
-      level: 6,
-      threshold: 1024,
-      filter: (req, res) => {
-        if (req.headers['x-no-compression']) {
-          return false;
-        }
-        return compression.filter(req, res);
-      },
-    }));
+    app.use(
+      compression({
+        level: 6,
+        threshold: 1024,
+        filter: (req, res) => {
+          if (req.headers['x-no-compression']) {
+            return false;
+          }
+          return compression.filter(req, res);
+        },
+      }),
+    );
 
     // Enhanced Cookie parser for mobile and web
     app.use(cookieParser(configService.get<string>('COOKIE_SECRET')));
@@ -175,7 +185,8 @@ async function bootstrap() {
           target: false,
           value: false,
         },
-        disableErrorMessages: configService.get<string>('NODE_ENV') === 'production',
+        disableErrorMessages:
+          configService.get<string>('NODE_ENV') === 'production',
       }),
     );
 
@@ -184,7 +195,9 @@ async function bootstrap() {
     app.useGlobalFilters(new HttpExceptionFilter(nestLogger));
     app.useGlobalInterceptors(
       new TransformInterceptor(reflector),
-      new TimeoutInterceptor(configService.get<number>('MOBILE_REQUEST_TIMEOUT') || 15000), // Longer timeout for mobile
+      new TimeoutInterceptor(
+        configService.get<number>('MOBILE_REQUEST_TIMEOUT') || 15000,
+      ), // Longer timeout for mobile
     );
 
     // API Versioning with mobile support
@@ -195,9 +208,17 @@ async function bootstrap() {
     });
 
     // Enhanced CORS Configuration for Mobile Apps & Web
-    const corsOrigins = configService.get<string>('CORS_ORIGINS')?.split(',').map(origin => origin.trim()) || [];
-    const mobileAppOrigins = configService.get<string>('MOBILE_APP_ORIGINS')?.split(',').map(origin => origin.trim()) || [];
-    
+    const corsOrigins =
+      configService
+        .get<string>('CORS_ORIGINS')
+        ?.split(',')
+        .map((origin) => origin.trim()) || [];
+    const mobileAppOrigins =
+      configService
+        .get<string>('MOBILE_APP_ORIGINS')
+        ?.split(',')
+        .map((origin) => origin.trim()) || [];
+
     app.enableCors({
       origin: [
         // Web origins
@@ -207,7 +228,7 @@ async function bootstrap() {
         'http://localhost:8080',
         'https://yourdomain.com',
         'https://www.yourdomain.com',
-        
+
         // Mobile app origins (Expo, React Native, etc.)
         'exp://localhost:19000',
         'exp://localhost:19001',
@@ -215,7 +236,7 @@ async function bootstrap() {
         'http://localhost:19006',
         'ionic://localhost',
         'capacitor://localhost',
-        
+
         // Add all mobile and web origins from environment
         ...corsOrigins,
         ...mobileAppOrigins,
@@ -257,9 +278,10 @@ async function bootstrap() {
     app.use((req, res, next) => {
       // Add platform identification
       const userAgent = req.headers['user-agent'] || '';
-      const clientType = req.headers['x-client-type'] || 
-                        (userAgent.toLowerCase().includes('mobile') ? 'mobile' : 'web');
-      
+      const clientType =
+        req.headers['x-client-type'] ||
+        (userAgent.toLowerCase().includes('mobile') ? 'mobile' : 'web');
+
       // Add client info to request object
       (req as any).client = {
         type: clientType,
@@ -269,8 +291,9 @@ async function bootstrap() {
       };
 
       // Add request ID for tracking
-      const requestId = req.headers['x-request-id'] || 
-                       `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const requestId =
+        req.headers['x-request-id'] ||
+        `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       (req as any).requestId = requestId;
       res.setHeader('X-Request-ID', requestId);
 
@@ -281,7 +304,9 @@ async function bootstrap() {
     if (configService.get<string>('NODE_ENV') !== 'production') {
       const config = new DocumentBuilder()
         .setTitle('Wellness API - Mobile & Web')
-        .setDescription('Wellness Application API Documentation for Mobile Apps and Web Clients')
+        .setDescription(
+          'Wellness Application API Documentation for Mobile Apps and Web Clients',
+        )
         .setVersion('1.0')
         .addBearerAuth(
           {
@@ -297,18 +322,21 @@ async function bootstrap() {
         .addCookieAuth('refreshToken', {
           type: 'apiKey',
           in: 'cookie',
-          description: 'Refresh token for mobile app sessions'
+          description: 'Refresh token for mobile app sessions',
         })
         .addApiKey(
           {
             type: 'apiKey',
             name: 'X-API-Key',
             in: 'header',
-            description: 'API Key for mobile app access'
+            description: 'API Key for mobile app access',
           },
-          'API-Key'
+          'API-Key',
         )
-        .addServer(`http://localhost:${configService.get<number>('PORT') || 3000}`, 'Development Server')
+        .addServer(
+          `http://localhost:${configService.get<number>('PORT') || 3000}`,
+          'Development Server',
+        )
         .addServer('https://api.yourdomain.com', 'Production Server')
         .addServer('https://mobile-api.yourdomain.com', 'Mobile API Gateway')
         .addTag('Auth', 'Mobile & Web Authentication endpoints')
@@ -334,9 +362,9 @@ async function bootstrap() {
           .mobile-badge { background: #4CAF50; color: white; padding: 2px 6px; border-radius: 3px; font-size: 12px; margin-left: 8px }
         `,
         customSiteTitle: 'Wellness API - Mobile & Web',
-        customfavIcon: '/favicon.ico'
+        customfavIcon: '/favicon.ico',
       });
-      
+
       logger.log('📚 Swagger documentation enabled at /api/docs');
     }
 
@@ -354,7 +382,7 @@ async function bootstrap() {
           database: 'connected', // You can add actual DB checks
           cache: 'connected',
           storage: 'connected',
-        }
+        },
       };
 
       res.status(200).json(healthCheck);
@@ -420,24 +448,25 @@ async function bootstrap() {
     }
 
     if (!server) {
-      throw new Error(`Could not find an available port. Tried: ${[defaultPort, ...ALTERNATIVE_PORTS].join(', ')}`);
+      throw new Error(
+        `Could not find an available port. Tried: ${[defaultPort, ...ALTERNATIVE_PORTS].join(', ')}`,
+      );
     }
 
     // Startup success message
     logger.log(` Wellness API Server is running!`);
     logger.log(` Local: http://localhost:${port}`);
     logger.log(` Network: http://${getLocalIpAddress()}:${port}`);
-    
+
     if (configService.get<string>('NODE_ENV') !== 'production') {
       logger.log(` API Docs: http://localhost:${port}/api/docs`);
     }
-    
+
     logger.log(`  Health Check: http://localhost:${port}/health`);
     logger.log(` Mobile Health: http://localhost:${port}/mobile/health`);
     logger.log(`⚡ Environment: ${env}`);
     logger.log(`🕒 Started at: ${new Date().toISOString()}`);
     logger.log(`📊 Platform: Mobile & Web Support Enabled`);
-
   } catch (error: any) {
     if (error.code === 'EADDRINUSE') {
       logger.error(` Port ${error.port} is already in use. Solutions:`);
@@ -445,7 +474,8 @@ async function bootstrap() {
       logger.error('   2. Kill process: sudo kill -9 $(sudo lsof -t -i:PORT)');
       logger.error('   3. Use different port');
     } else {
-      logger.error(' Application bootstrap failed:', error);
+      logger.error(` Application bootstrap failed: ${error.message}`);
+      logger.error(error.stack || error);
     }
     process.exit(1);
   }

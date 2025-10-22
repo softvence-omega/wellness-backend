@@ -15,6 +15,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { EmotionsModule } from './modules/emotion/emotions.module';
 import { HealthDataModule } from './modules/watch-data/watch-data.module';
 import { MedicalLabReportsModule } from './modules/lab-reports/lab-reports.module';
+import { NudgeModule } from './modules/nudge/nudge.module';
 // import { FitbitModule } from './modules/fitbit/fitbit.module';
 // import { NudgeModule } from './modules/nudge/nudge.module';
 // import { StravaModule } from './modules/strava/strava.module';
@@ -22,7 +23,7 @@ import { MedicalLabReportsModule } from './modules/lab-reports/lab-reports.modul
 @Module({
   imports: [ConfigModule.forRoot({
     isGlobal: true, 
-  }), AuthModule, DeviceIntegrationModule, ProfileModule,MealsModule, TipsModule, VitalsModule,CloudinaryModule, EmotionsModule, HealthDataModule,MedicalLabReportsModule  ],
+  }), AuthModule, DeviceIntegrationModule, ProfileModule,MealsModule, TipsModule, VitalsModule,CloudinaryModule, EmotionsModule, HealthDataModule,MedicalLabReportsModule, NudgeModule  ],
   controllers: [],
   providers: [GoogleService],
 })
