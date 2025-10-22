@@ -1,7 +1,8 @@
 // dto/create-nudge.dto.ts
 import { IsString, IsEnum, IsNumber, IsOptional, IsDate, Min, IsNotEmpty } from 'class-validator';
 import { Type } from 'class-transformer';
-import { NudgeCategory, NudgeUnit } from '@prisma/client';
+import { NudgeCategory } from '@prisma/client';
+import { NudgeUnit } from 'src/common/enums';
 
 export class CreateNudgeDto {
   @IsString()

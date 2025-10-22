@@ -1,5 +1,5 @@
 // types/nudge.types.ts
-import { NudgeCategory, NudgeUnit, TipType, RiskLevel } from '@prisma/client';
+import { NudgeCategory, TipType, RiskLevel, NudgeUnit } from '@prisma/client';
 
 export interface NudgeResponse {
   id: string;
