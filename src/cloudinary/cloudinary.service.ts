@@ -24,8 +24,8 @@ export class CloudinaryService {
       }
 
       // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        throw new BadRequestException('File size must be less than 5MB');
+      if (file.size > 10 * 1024 * 1024) {
+        throw new BadRequestException('File size must be less than 10MB');
       }
 
       this.logger.debug('Uploading image to Cloudinary', context, {
@@ -145,12 +145,9 @@ export class CloudinaryService {
   }
 
   extractPublicId(url: string): string | null {
-    // Extract public_id from Cloudinary URL
     const matches = url.match(/\/upload\/(?:v\d+\/)?(.+)\.(?:jpg|png|webp|pdf|jpeg)/);
     return matches ? matches[1] : null;
   }
-
-  // Alternative method that throws an error if public ID cannot be extracted
   extractPublicIdOrThrow(url: string): string {
     const publicId = this.extractPublicId(url);
     if (!publicId) {

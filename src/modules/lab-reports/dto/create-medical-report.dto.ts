@@ -74,6 +74,15 @@ export class ReportDataDto {
   wellness_insight?: string;
 }
 
+export class CreateLabReportDto {
+  @ApiProperty({ description: 'ID of the user uploading the report' })
+  @IsNotEmpty()
+  @IsString()
+  userId: string;
+
+  photo?: string;
+  fileUrl?: string; 
+}
 export class CreateMedicalReportDto {
   @ApiProperty({ description: 'Name of the report file' })
   @IsNotEmpty()

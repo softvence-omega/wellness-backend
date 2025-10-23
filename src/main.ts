@@ -9,23 +9,16 @@ import cookieParser from 'cookie-parser';
 import { rateLimit } from 'express-rate-limit';
 import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
-
-// Load environment variables early
 import * as dotenv from 'dotenv';
 import * as path from 'path';
-
-// Determine environment and load appropriate .env file
 const env = process.env.NODE_ENV || 'development';
 const envPath = path.resolve(process.cwd(), `.env.${env}`);
 
-// Load environment variables
+
 const result = dotenv.config({ path: envPath });
 if (result.error) {
-  // Fallback to default .env file
   dotenv.config();
 }
-
-// Import filters and interceptors
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { TimeoutInterceptor } from './common/interceptors/timeout.interceptor';
@@ -107,8 +100,6 @@ async function bootstrap() {
         crossOriginResourcePolicy: { policy: 'cross-origin' }, // For mobile apps
       }),
     );
-
-    // Enhanced Rate Limiting for Mobile & Web
     const generalLimiter = rateLimit({
       windowMs: 15 * 60 * 1000,
       max: configService.get<number>('RATE_LIMIT_MAX') || 200, // Higher for mobile apps
@@ -135,7 +126,7 @@ async function bootstrap() {
     });
 
     const mobileLimiter = rateLimit({
-      windowMs: 1 * 60 * 1000, // 1 minute
+      windowMs: 1 * 60 * 1000, 
       max: 30, // Higher burst for mobile apps
       message: {
         error: 'Mobile rate limit exceeded',
@@ -197,7 +188,7 @@ async function bootstrap() {
       new TransformInterceptor(reflector),
       new TimeoutInterceptor(
         configService.get<number>('MOBILE_REQUEST_TIMEOUT') || 15000,
-      ), // Longer timeout for mobile
+      ), 
     );
 
     // API Versioning with mobile support
@@ -224,7 +215,7 @@ async function bootstrap() {
         // Web origins
         'http://localhost:3000',
         'http://localhost:3001',
-        'http://localhost:5173', // Vite
+        'http://localhost:5173', 
         'http://localhost:8080',
         'https://yourdomain.com',
         'https://www.yourdomain.com',
@@ -276,13 +267,10 @@ async function bootstrap() {
 
     // Mobile-specific middleware
     app.use((req, res, next) => {
-      // Add platform identification
       const userAgent = req.headers['user-agent'] || '';
       const clientType =
         req.headers['x-client-type'] ||
         (userAgent.toLowerCase().includes('mobile') ? 'mobile' : 'web');
-
-      // Add client info to request object
       (req as any).client = {
         type: clientType,
         platform: req.headers['x-platform'] || 'unknown',
@@ -290,7 +278,6 @@ async function bootstrap() {
         deviceId: req.headers['x-device-id'] || null,
       };
 
-      // Add request ID for tracking
       const requestId =
         req.headers['x-request-id'] ||
         `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -462,8 +449,8 @@ async function bootstrap() {
       logger.log(` API Docs: http://localhost:${port}/api/docs`);
     }
 
-    logger.log(`  Health Check: http://localhost:${port}/health`);
-    logger.log(` Mobile Health: http://localhost:${port}/mobile/health`);
+    logger.log(`Health Check: http://localhost:${port}/health`);
+    logger.log(`Mobile Health: http://localhost:${port}/mobile/health`);
     logger.log(`⚡ Environment: ${env}`);
     logger.log(`🕒 Started at: ${new Date().toISOString()}`);
     logger.log(`📊 Platform: Mobile & Web Support Enabled`);

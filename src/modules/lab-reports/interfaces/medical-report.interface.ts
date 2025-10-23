@@ -1,4 +1,4 @@
-// src/medical-reports/interfaces/medical-report.interface.ts
+
 import { ReportType } from "@prisma/client";
 import { JsonValue } from "@prisma/client/runtime/library";
 // Import the custom type

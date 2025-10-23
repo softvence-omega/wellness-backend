@@ -16,15 +16,30 @@ import { EmotionsModule } from './modules/emotion/emotions.module';
 import { HealthDataModule } from './modules/watch-data/watch-data.module';
 import { MedicalLabReportsModule } from './modules/lab-reports/lab-reports.module';
 import { NudgeModule } from './modules/nudge/nudge.module';
+import { LabReportFileUploadModule } from './modules/lab-report-upload/lab-report-upload.module';
 // import { FitbitModule } from './modules/fitbit/fitbit.module';
 // import { NudgeModule } from './modules/nudge/nudge.module';
 // import { StravaModule } from './modules/strava/strava.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({
-    isGlobal: true, 
-  }), AuthModule, DeviceIntegrationModule, ProfileModule,MealsModule, TipsModule, VitalsModule,CloudinaryModule, EmotionsModule, HealthDataModule,MedicalLabReportsModule, NudgeModule  ],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    AuthModule,
+    DeviceIntegrationModule,
+    ProfileModule,
+    MealsModule,
+    TipsModule,
+    VitalsModule,
+    CloudinaryModule,
+    EmotionsModule,
+    HealthDataModule,
+    MedicalLabReportsModule,
+    NudgeModule,
+    LabReportFileUploadModule,
+  ],
   controllers: [],
   providers: [GoogleService],
 })
-export class AppModule { }
+export class AppModule {}
