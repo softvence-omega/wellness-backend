@@ -17,6 +17,7 @@ import { HealthDataModule } from './modules/watch-data/watch-data.module';
 import { MedicalLabReportsModule } from './modules/lab-reports/lab-reports.module';
 import { NudgeModule } from './modules/nudge/nudge.module';
 import { LabReportFileUploadModule } from './modules/lab-report-upload/lab-report-upload.module';
+import { ThrottlerModule } from '@nestjs/throttler';
 // import { FitbitModule } from './modules/fitbit/fitbit.module';
 // import { NudgeModule } from './modules/nudge/nudge.module';
 // import { StravaModule } from './modules/strava/strava.module';
@@ -26,6 +27,10 @@ import { LabReportFileUploadModule } from './modules/lab-report-upload/lab-repor
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    ThrottlerModule.forRoot({
+      ttl: 60,
+      limit: 100,
+    } as any),
     AuthModule,
     DeviceIntegrationModule,
     ProfileModule,
