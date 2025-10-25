@@ -548,6 +548,7 @@ async update(
 
       // Count meals by type
       meals.forEach(meal => {
+        if (!meal.mealType) return; 
         stats.mealsByType[meal.mealType] = (stats.mealsByType[meal.mealType] || 0) + 1;
       });
 

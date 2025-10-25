@@ -12,12 +12,14 @@ import {
   HttpCode,
   HttpStatus,
   BadRequestException,
+  Res,
 } from '@nestjs/common';
 
 import { CreateNudgeDto } from './dto/create-nudge.dto';
 import { UpdateNudgeDto } from './dto/update-nudge.dto';
 import { UpdateNudgeProgressDto } from './dto/update-nudge-progress.dto';
 import { NudgeQueryDto } from './dto/nudge-query.dto';
+import type { Response } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import {
   ApiTags,
@@ -26,6 +28,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { NudgesService } from './nudge.service';
+import { GetNudgesQueryDto } from './dto/nudges.dto';
 
 @ApiTags('nudges')
 @ApiBearerAuth()
@@ -54,17 +57,35 @@ export class NudgesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all nudges for user with optional filters' })
-  @ApiResponse({ status: 200, description: 'Nudges retrieved successfully' })
-  findAll(@Request() req, @Query() query: NudgeQueryDto) {
+  @ApiOperation({
+    summary: 'Get all nudges for user with optional filters and pagination',
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Nudges retrieved successfully or error details in response message',
+  })
+  async findAll(
+    @Request() req,
+    @Query() query: GetNudgesQueryDto,
+    @Res() res: Response,
+  ) {
     console.log('Request user in findAll:', req.user);
     const userId = req.user?.userId || req.user?.id || req.user?.sub;
 
     if (!userId) {
-      throw new BadRequestException('User ID not found in request');
+      return res.status(HttpStatus.OK).json({
+        data: [],
+        message: 'User ID is missing. Please authenticate and try again.',
+        totalPages: 0,
+        currentPage: 0,
+        success: false,
+        nextCursor: null,
+      });
     }
 
-    return this.nudgesService.findAll(userId, query);
+    const response = await this.nudgesService.findAll(userId, query);
+    return res.status(HttpStatus.OK).json(response);
   }
 
   @Get('today-progress')

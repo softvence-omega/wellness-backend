@@ -1,4 +1,3 @@
-// dto/nudge.dto.ts
 import { 
   IsString, 
   IsEnum, 
@@ -9,12 +8,12 @@ import {
   Min,
   Max,
   IsPositive,
-  IsNotEmpty
+  IsNotEmpty,
+  IsDateString,
+  IsInt,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { NudgeCategory, NudgeUnit } from '@prisma/client';
-
-
 
 export class CreateNudgeDto {
   @IsString()
@@ -80,9 +79,8 @@ export class GetNudgesQueryDto {
   category?: NudgeCategory;
 
   @IsOptional()
-  @IsDate()
-  @Type(() => Date)
-  date?: Date;
+  @IsDateString()
+  date?: string;
 
   @IsOptional()
   @IsBoolean()
@@ -93,6 +91,15 @@ export class GetNudgesQueryDto {
   @IsBoolean()
   @Type(() => Boolean)
   includeTips?: boolean = false;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  take?: number;
+
+  @IsOptional()
+  @IsString()
+  cursor?: string;
 }
 
 export class NudgeIdParamDto {
