@@ -56,11 +56,11 @@ export class NudgesController {
     return this.nudgesService.create(req.user.userId, createNudgeDto);
   }
 
-  @Get()
+@Get()
   @ApiOperation({
     summary: 'Get all nudges for a user with optional filters and pagination',
     description:
-      'Retrieves nudges for the authenticated user, filtered by category, completion status, or date. Use `date=YYYY-MM-DD` to fetch nudges on or after the specified date, or `date=upcoming` for nudges on or after today. Supports pagination with `take` and `cursor`.',
+      'Retrieves nudges for the authenticated user, filtered by category, completion status, or date. Use `date=YYYY-MM-DD` to fetch nudges on or after the specified date, `date=upcoming` for nudges on or after today, or `date=today` for nudges today only. Supports pagination with `take` and `cursor`.',
   })
   @ApiResponse({
     status: 200,
@@ -86,7 +86,7 @@ export class NudgesController {
         totalPages: 0,
         currentPage: 0,
         success: false,
-        nextCursor: null, // Controller correctly handles null
+        nextCursor: null,
       });
     }
 

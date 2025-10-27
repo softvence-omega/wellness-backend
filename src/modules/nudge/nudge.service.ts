@@ -279,7 +279,7 @@ async findAll(userId: string, query: GetNudgesQueryDto): Promise<{
   totalPages: number;
   currentPage: number;
   success: boolean;
-  nextCursor: string | null; // Fixed type to allow null
+  nextCursor: string | null;
 }> {
   try {
     this.logger.log(`Fetching nudges for user ${userId}`, { query });
@@ -317,13 +317,22 @@ async findAll(userId: string, query: GetNudgesQueryDto): Promise<{
         where.date = {
           gte: today,
         };
+      } else if (query.date === 'today') {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Start of today
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1); // Start of tomorrow
+        where.date = {
+          gte: today,
+          lt: tomorrow,
+        };
       } else {
         const targetDate = new Date(query.date);
         if (isNaN(targetDate.getTime())) {
           this.logger.warn(`Invalid date format: ${query.date}`);
           return {
             data: [],
-            message: 'Invalid date format. Please use YYYY-MM-DD (e.g., 2025-10-25) or "upcoming".',
+            message: 'Invalid date format. Please use YYYY-MM-DD (e.g., 2025-10-25), "upcoming", or "today".',
             totalPages: 0,
             currentPage: 0,
             success: false,

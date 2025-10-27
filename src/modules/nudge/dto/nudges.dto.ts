@@ -1,9 +1,9 @@
-import { 
-  IsString, 
-  IsEnum, 
-  IsNumber, 
-  IsOptional, 
-  IsBoolean, 
+import {
+  IsString,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsBoolean,
   IsDate,
   Min,
   Max,
@@ -15,6 +15,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { NudgeCategory, NudgeUnit } from '@prisma/client';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateNudgeDto {
   @IsString()
@@ -79,10 +80,17 @@ export class GetNudgesQueryDto {
   @IsEnum(NudgeCategory)
   category?: NudgeCategory;
 
+  @ApiProperty({
+    description:
+      'Filter nudges: "upcoming" for on or after today, "today" for today only, or YYYY-MM-DD for on or after the specified date',
+    required: false,
+    example: 'today',
+  })
   @IsOptional()
   @IsString()
-  @Matches(/^(\d{4}-\d{2}-\d{2}|upcoming)$/, {
-    message: 'Date must be in YYYY-MM-DD format (e.g., 2025-10-25) or "upcoming"',
+  @Matches(/^(\d{4}-\d{2}-\d{2}|upcoming|today)$/, {
+    message:
+      'Date must be in YYYY-MM-DD format (e.g., 2025-10-25), "upcoming", or "today"',
   })
   date?: string;
 
