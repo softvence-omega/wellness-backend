@@ -106,13 +106,180 @@ export class NudgesService {
   }
 
 
+// async findAll(userId: string, query: GetNudgesQueryDto): Promise<{
+//   data: NudgeResponse[];
+//   message: string;
+//   totalPages: number;
+//   currentPage: number;
+//   success: boolean;
+//   nextCursor: string | null;
+// }> {
+//   try {
+//     this.logger.log(`Fetching nudges for user ${userId}`, { query });
+
+//     // Validate userId
+//     if (!userId) {
+//       this.logger.warn(`Invalid user ID for fetching nudges`);
+//       return {
+//         data: [],
+//         message: 'User ID is missing. Please authenticate and try again.',
+//         totalPages: 0,
+//         currentPage: 0,
+//         success: false,
+//         nextCursor: null,
+//       };
+//     }
+
+//     const where: Prisma.NudgeWhereInput = {
+//       userId,
+//       isDeleted: false,
+//     };
+
+//     if (query.category) {
+//       where.category = query.category;
+//     }
+
+//     if (query.completed !== undefined) {
+//       where.completed = query.completed;
+//     }
+
+//     if (query.date) {
+//       const targetDate = new Date(query.date);
+//       if (isNaN(targetDate.getTime())) {
+//         this.logger.warn(`Invalid date format: ${query.date}`);
+//         return {
+//           data: [],
+//           message: 'Invalid date format. Please use YYYY-MM-DD (e.g., 2025-10-25).',
+//           totalPages: 0,
+//           currentPage: 0,
+//           success: false,
+//           nextCursor: null,
+//         };
+//       }
+//       const nextDay = new Date(targetDate);
+//       nextDay.setDate(nextDay.getDate() + 1);
+
+//       where.date = {
+//         gte: targetDate,
+//         lt: nextDay,
+//       };
+//     }
+
+//     const take = query.take ? Math.min(parseInt(query.take.toString()), 100) : 10; 
+//     const cursor = query.cursor ? { id: query.cursor } : undefined;
+//     const totalRecords = await this.prisma.nudge.count({ where });
+//     if (totalRecords === 0) {
+//       this.logger.log(`No nudges found for user ${userId}`);
+//       return {
+//         data: [],
+//         message: 'No nudges found matching the specified criteria.',
+//         totalPages: 0,
+//         currentPage: 0,
+//         success: true, 
+//         nextCursor: null,
+//       };
+//     }
+
+//     const include: Prisma.NudgeInclude = {
+//       tips: query.includeTips
+//         ? {
+//             orderBy: { createdAt: 'desc' },
+//           }
+//         : false,
+//     };
+
+//     const nudges = await this.prisma.nudge.findMany({
+//       where,
+//       include,
+//       orderBy: { createdAt: 'desc' },
+//       take: take + 1, 
+//       cursor,
+//       skip: cursor ? 1 : 0, 
+//     });
+
+//     // Determine if there's a next page
+//     const hasNextPage = nudges.length > take;
+//     const results = hasNextPage ? nudges.slice(0, take) : nudges;
+//     const nextCursor = hasNextPage ? results[results.length - 1].id : null;
+
+//     // Calculate total pages and current page
+//     const totalPages = Math.ceil(totalRecords / take);
+//     let currentPage = 1;
+//     if (query.cursor) {
+//       const cursorNudge = await this.prisma.nudge.findUnique({ where: { id: query.cursor } });
+//       if (cursorNudge) {
+//         const recordsBefore = await this.prisma.nudge.count({
+//           where: {
+//             ...where,
+//             createdAt: { gt: cursorNudge.createdAt },
+//           },
+//         });
+//         currentPage = Math.max(1, Math.ceil(recordsBefore / take) + 1);
+//       } else {
+//         this.logger.warn(`Invalid cursor ID: ${query.cursor}`);
+//         return {
+//           data: [],
+//           message: `Invalid cursor ID: ${query.cursor}.`,
+//           totalPages: 0,
+//           currentPage: 0,
+//           success: false,
+//           nextCursor: null,
+//         };
+//       }
+//     }
+
+//     this.logger.log(`Found ${results.length} nudges for user ${userId}`, {
+//       totalRecords,
+//       totalPages,
+//       currentPage,
+//     });
+
+//     return {
+//       data: results.map(nudge => this.formatNudgeResponse(nudge)),
+//       message: `Retrieved ${results.length} of ${totalRecords} nudges successfully.`,
+//       totalPages,
+//       currentPage,
+//       success: true,
+//       nextCursor,
+//     };
+//   } catch (error) {
+//     this.logger.error('Error fetching nudges', { error, userId });
+
+//     // Handle all errors with a specific message
+//     let message = 'An unexpected error occurred while fetching nudges.';
+//     if (error instanceof Prisma.PrismaClientKnownRequestError) {
+//       switch (error.code) {
+//         case 'P2002':
+//           message = 'Duplicate nudge entry detected.';
+//           break;
+//         case 'P2025':
+//           message = 'Invalid query parameters provided.';
+//           break;
+//         default:
+//           message = 'A database error occurred while fetching nudges.';
+//       }
+//     } else if (error instanceof Error) {
+//       message = `Error: ${error.message}`;
+//     }
+
+//     return {
+//       data: [],
+//       message,
+//       totalPages: 0,
+//       currentPage: 0,
+//       success: false,
+//       nextCursor: null,
+//     };
+//   }
+// }
+
 async findAll(userId: string, query: GetNudgesQueryDto): Promise<{
   data: NudgeResponse[];
   message: string;
   totalPages: number;
   currentPage: number;
   success: boolean;
-  nextCursor: string | null;
+  nextCursor: string | null; // Fixed type to allow null
 }> {
   try {
     this.logger.log(`Fetching nudges for user ${userId}`, { query });
@@ -144,28 +311,34 @@ async findAll(userId: string, query: GetNudgesQueryDto): Promise<{
     }
 
     if (query.date) {
-      const targetDate = new Date(query.date);
-      if (isNaN(targetDate.getTime())) {
-        this.logger.warn(`Invalid date format: ${query.date}`);
-        return {
-          data: [],
-          message: 'Invalid date format. Please use YYYY-MM-DD (e.g., 2025-10-25).',
-          totalPages: 0,
-          currentPage: 0,
-          success: false,
-          nextCursor: null,
+      if (query.date === 'upcoming') {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Start of today
+        where.date = {
+          gte: today,
+        };
+      } else {
+        const targetDate = new Date(query.date);
+        if (isNaN(targetDate.getTime())) {
+          this.logger.warn(`Invalid date format: ${query.date}`);
+          return {
+            data: [],
+            message: 'Invalid date format. Please use YYYY-MM-DD (e.g., 2025-10-25) or "upcoming".',
+            totalPages: 0,
+            currentPage: 0,
+            success: false,
+            nextCursor: null,
+          };
+        }
+        // Set to start of the specified date
+        targetDate.setHours(0, 0, 0, 0);
+        where.date = {
+          gte: targetDate,
         };
       }
-      const nextDay = new Date(targetDate);
-      nextDay.setDate(nextDay.getDate() + 1);
-
-      where.date = {
-        gte: targetDate,
-        lt: nextDay,
-      };
     }
 
-    const take = query.take ? Math.min(parseInt(query.take.toString()), 100) : 10; // Default to 10, max 100
+    const take = query.take ? Math.min(parseInt(query.take.toString()), 100) : 10;
     const cursor = query.cursor ? { id: query.cursor } : undefined;
     const totalRecords = await this.prisma.nudge.count({ where });
     if (totalRecords === 0) {
@@ -175,7 +348,7 @@ async findAll(userId: string, query: GetNudgesQueryDto): Promise<{
         message: 'No nudges found matching the specified criteria.',
         totalPages: 0,
         currentPage: 0,
-        success: true, 
+        success: true,
         nextCursor: null,
       };
     }
@@ -192,9 +365,9 @@ async findAll(userId: string, query: GetNudgesQueryDto): Promise<{
       where,
       include,
       orderBy: { createdAt: 'desc' },
-      take: take + 1, // Fetch one extra to determine if there's a next page
+      take: take + 1,
       cursor,
-      skip: cursor ? 1 : 0, // Skip the cursor record if provided
+      skip: cursor ? 1 : 0,
     });
 
     // Determine if there's a next page
@@ -204,7 +377,6 @@ async findAll(userId: string, query: GetNudgesQueryDto): Promise<{
 
     // Calculate total pages and current page
     const totalPages = Math.ceil(totalRecords / take);
-    // Estimate current page: If no cursor, it's page 1; otherwise, estimate based on records skipped
     let currentPage = 1;
     if (query.cursor) {
       const cursorNudge = await this.prisma.nudge.findUnique({ where: { id: query.cursor } });
@@ -273,6 +445,7 @@ async findAll(userId: string, query: GetNudgesQueryDto): Promise<{
     };
   }
 }
+
   async findOne(id: string, userId: string): Promise<NudgeResponse> {
     try {
       this.logger.log(`Fetching nudge ${id} for user ${userId}`);

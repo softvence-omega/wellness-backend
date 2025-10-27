@@ -11,6 +11,7 @@ import {
   IsNotEmpty,
   IsDateString,
   IsInt,
+  Matches,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { NudgeCategory, NudgeUnit } from '@prisma/client';
@@ -79,7 +80,10 @@ export class GetNudgesQueryDto {
   category?: NudgeCategory;
 
   @IsOptional()
-  @IsDateString()
+  @IsString()
+  @Matches(/^(\d{4}-\d{2}-\d{2}|upcoming)$/, {
+    message: 'Date must be in YYYY-MM-DD format (e.g., 2025-10-25) or "upcoming"',
+  })
   date?: string;
 
   @IsOptional()

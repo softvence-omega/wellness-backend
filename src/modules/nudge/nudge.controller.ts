@@ -58,12 +58,18 @@ export class NudgesController {
 
   @Get()
   @ApiOperation({
-    summary: 'Get all nudges for user with optional filters and pagination',
+    summary: 'Get all nudges for a user with optional filters and pagination',
+    description:
+      'Retrieves nudges for the authenticated user, filtered by category, completion status, or date. Use `date=YYYY-MM-DD` to fetch nudges on or after the specified date, or `date=upcoming` for nudges on or after today. Supports pagination with `take` and `cursor`.',
   })
   @ApiResponse({
     status: 200,
     description:
-      'Nudges retrieved successfully or error details in response message',
+      'Nudges retrieved successfully or error details in response message. Returns an array of nudges, total pages, current page, success status, and next cursor for pagination.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid query parameters (e.g., invalid date format or cursor).',
   })
   async findAll(
     @Request() req,
@@ -80,7 +86,7 @@ export class NudgesController {
         totalPages: 0,
         currentPage: 0,
         success: false,
-        nextCursor: null,
+        nextCursor: null, // Controller correctly handles null
       });
     }
 
