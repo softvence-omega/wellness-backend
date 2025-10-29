@@ -4,6 +4,6 @@ import { DeviceIntegrationController } from './device-integration.controller';
 
 @Module({
   providers: [DeviceIntegrationService],
-  controllers: [DeviceIntegrationController]
+  controllers: [DeviceIntegrationController],
 })
 export class DeviceIntegrationModule {}

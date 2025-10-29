@@ -1,20 +1,20 @@
 // src/medical-reports/medical-reports.repository.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { 
-  IMedicalReport, 
-  ICreateMedicalReport, 
-  IUpdateMedicalReport, 
+import {
+  IMedicalReport,
+  ICreateMedicalReport,
+  IUpdateMedicalReport,
   IMedicalReportFilters,
   IPaginatedMedicalReports,
-  ReportData 
+  ReportData,
 } from './interfaces/medical-report.interface';
 
 @Injectable()
 export class MedicalReportsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-async create(data: ICreateMedicalReport): Promise<IMedicalReport> {
+  async create(data: ICreateMedicalReport): Promise<IMedicalReport> {
     try {
       // Make sure userId is provided and valid
       if (!data.userId) {
@@ -23,7 +23,7 @@ async create(data: ICreateMedicalReport): Promise<IMedicalReport> {
 
       // Verify user exists
       const userExists = await this.prisma.user.findUnique({
-        where: { id: data.userId }
+        where: { id: data.userId },
       });
 
       if (!userExists) {
@@ -65,7 +65,9 @@ async create(data: ICreateMedicalReport): Promise<IMedicalReport> {
     return this.toIMedicalReport(report);
   }
 
-  async findAll(filters: IMedicalReportFilters): Promise<IPaginatedMedicalReports> {
+  async findAll(
+    filters: IMedicalReportFilters,
+  ): Promise<IPaginatedMedicalReports> {
     const {
       page = 1,
       limit = 10,
@@ -122,7 +124,7 @@ async create(data: ICreateMedicalReport): Promise<IMedicalReport> {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        reports: reports.map(report => this.toIMedicalReport(report)),
+        reports: reports.map((report) => this.toIMedicalReport(report)),
         pagination: {
           total,
           page,
@@ -137,20 +139,24 @@ async create(data: ICreateMedicalReport): Promise<IMedicalReport> {
     }
   }
 
-  async update(id: string, userId: string, data: IUpdateMedicalReport): Promise<IMedicalReport> {
+  async update(
+    id: string,
+    userId: string,
+    data: IUpdateMedicalReport,
+  ): Promise<IMedicalReport> {
     // Check if report exists and belongs to user
     await this.findById(id, userId);
 
     try {
       // Prepare data for Prisma (convert undefined to null for optional fields)
       const prismaData: any = { ...data };
-      
+
       if (data.labName === undefined) {
         delete prismaData.labName;
       } else {
         prismaData.labName = data.labName || null;
       }
-      
+
       if (data.doctorName === undefined) {
         delete prismaData.doctorName;
       } else {
@@ -186,7 +192,11 @@ async create(data: ICreateMedicalReport): Promise<IMedicalReport> {
     }
   }
 
-  async checkFileNameExists(fileName: string, userId: string, excludeId?: string): Promise<boolean> {
+  async checkFileNameExists(
+    fileName: string,
+    userId: string,
+    excludeId?: string,
+  ): Promise<boolean> {
     const where: any = {
       fileName,
       userId,

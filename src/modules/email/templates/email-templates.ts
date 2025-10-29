@@ -32,7 +32,6 @@ export const verificationTemplate = (otp: string) => `
   </div>
 `;
 
-
 export const resetPasswordTemplate = (url: string) => `
   <h1>Reset Your Password</h1>
   <p>Click the link below to reset your password:</p>

@@ -6,11 +6,10 @@ import { PrismaModule } from 'src/prisma/prisma.module';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CustomLogger } from 'src/logger/logger.service';
 
-
 @Module({
-  imports: [PrismaModule], 
-  controllers: [EmotionsController], 
-  providers: [EmotionsService, CustomLogger], 
+  imports: [PrismaModule],
+  controllers: [EmotionsController],
+  providers: [EmotionsService, CustomLogger],
   exports: [EmotionsService],
 })
 export class EmotionsModule {}

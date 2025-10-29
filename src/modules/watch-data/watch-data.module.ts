@@ -5,8 +5,6 @@ import { HealthDataController } from './watch-data.controller';
 import { HealthDataService } from './watch-data.service';
 import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
 
-
-
 @Module({
   imports: [PrismaModule],
   controllers: [HealthDataController],

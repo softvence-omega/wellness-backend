@@ -60,7 +60,6 @@
 //             },
 //         });
 
-
 //         // Total conversations count for pagination
 //         const total = await this.prisma.conversation.count({
 //             where: {
@@ -119,8 +118,6 @@
 //             }
 //         })
 
-    
-
 //         return {
 //             result: chats.reverse(),
 //             meta: {
@@ -139,7 +136,6 @@
 //             }
 //         })
 
-
 //         if (!conv) throw new NotFoundException('Conversation not found');
 //         if (conv.userId !== userId) throw new ForbiddenException('Not allowed to delete conversation')
 
@@ -156,11 +152,8 @@
 //             where: { id: conversationId },
 //         });
 
-
 //         return;
 
 //     }
-
-
 
 // }

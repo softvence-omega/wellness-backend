@@ -1,160 +1,199 @@
-// import {
-//   BadRequestException,
-//   Injectable,
-//   InternalServerErrorException,
-//   NotFoundException,
-// } from '@nestjs/common';
-// import { PrismaService } from 'src/prisma/prisma.service';
-// import { UpdateProfileDto } from './dto/user-update.dto';
-// import { Prisma } from '@prisma/client';
-// import { CloudinaryService } from 'src/common/cloudinary/cloudinary.service';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { UpdateProfileDto } from './dto/user-update.dto';
+import { Prisma } from '@prisma/client';
+import { CloudinaryService } from 'src/common/cloudinary/cloudinary.service';
+import { UpdateNotificationSettingsDto } from './dto/notification-settings.dto';
 
-// @Injectable()
-// export class UsersService {
-//   constructor(private readonly prisma: PrismaService, private readonly cloudinary: CloudinaryService) { }
+@Injectable()
+export class UsersService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cloudinary: CloudinaryService,
+  ) {}
 
-//   // ✅ Update profile
-//   async profileUpdate(dto: UpdateProfileDto, userId: number) {
-//     const isUserExist = await this.prisma.user.findUnique({
-//       where: { id: userId },
-//     });
+  
 
-//     if (!isUserExist) throw new NotFoundException('User not found!');
-//     if (isUserExist.isDeleted) throw new NotFoundException('User already deleted!');
+  async updateNotificationSettings(
+    userId: string,
+    dto: UpdateNotificationSettingsDto,
+  ) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { notificationSettings: true },
+    });
 
-//     const updateProfile = await this.prisma.profile.update({
-//       where: { userId },
-//       data: {
-//         fullName: dto.fullName,
-//         dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
-//         gender: dto.gender,
-//         height: dto.height,
-//         weight: dto.weight,
-//         healthGoal: dto.healthGoal,
-//         photo: dto.photo,
-//         language: dto.language,
-//         isEnableNotification: dto.isEnableNotification,
-//       },
-//     });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
-//     return updateProfile;
-//   }
+    const settings = await this.prisma.notificationSettings.upsert({
+      where: { userId },
+      update: dto,
+      create: {
+        userId,
+        ...dto,
+      },
+    });
 
-//  async uploadFile(file: Express.Multer.File, userId: number) {
-//     let fileUrl = '';
+    return settings;
+  }
 
-//     //  Upload image to Cloudinary
-//     if (file) {
-//       const uploadResult = await this.cloudinary.uploadBuffer(
-//         file.buffer,
-//         'photo/fileUrl',
-//         'image',
-//       );
-//       fileUrl = uploadResult.secure_url;
-//     }
+  async profileUpdate(dto: UpdateProfileDto, userId: string) {
+    const isUserExist = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
 
-//     // ✅ Check if user exists
-//     const isUserExist = await this.prisma.user.findUnique({
-//       where: { id: userId },
-//     });
-//     if (!isUserExist) throw new NotFoundException('User not found!');
-//     if (isUserExist.isDeleted)
-//       throw new NotFoundException('User already deleted!');
+    if (!isUserExist) throw new NotFoundException('User not found!');
+    if (isUserExist.isDeleted)
+      throw new NotFoundException('User already deleted!');
 
-//     // ✅ Update profile photo
-//     const updatedProfile = await this.prisma.profile.update({
-//       where: { userId },
-//       data: { photo: fileUrl },
-//     });
+    const updateProfile = await this.prisma.profile.update({
+      where: { userId },
+      data: {
+        fullName: dto.fullName,
+        dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
+        gender: dto.gender,
+        height: dto.height ? parseFloat(dto.height) : undefined,
+        weight: dto.weight ? parseFloat(dto.weight) : undefined,
+        healthGoal: dto.healthGoal,
+        language: dto.language,
+        isEnableNotification: dto.isEnableNotification,
+      },
+    });
 
-//     return updatedProfile;
-//   }
+    return updateProfile;
+  }
 
-//   // ✅ List all users
-//   async findAll(
-//     page = 1,
-//     limit = 10,
-//     searchTerm?: string,
-//     order: 'asc' | 'desc' = 'desc',
-//     filters?: { [key: string]: any },
-//   ) {
-//     try {
-//       const skip = (page - 1) * limit;
+  async uploadFile(file: Express.Multer.File, userId: string) {
+    let fileUrl = '';
 
-//       console.log(page, limit)
+    if (file) {
+      const uploadResult = await this.cloudinary.uploadBuffer(
+        file.buffer,
+        'photo/fileUrl',
+        'image',
+      );
+      fileUrl = uploadResult.secure_url;
+    }
 
-//       const searchFilter: Prisma.UserWhereInput = searchTerm
-//         ? {
-//           OR: [
-//             { profile: { fullName: { contains: searchTerm, mode: Prisma.QueryMode.insensitive } } },
-//             { email: { contains: searchTerm, mode: Prisma.QueryMode.insensitive } },
-//           ],
-//         }
-//         : {};
+    const isUserExist = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!isUserExist) throw new NotFoundException('User not found!');
+    if (isUserExist.isDeleted)
+      throw new NotFoundException('User already deleted!');
 
-//       const where: Prisma.UserWhereInput = {
-//         ...filters,
-//         ...searchFilter,
-//         isDeleted: false,
-//       };
+    const updatedProfile = await this.prisma.profile.update({
+      where: { userId },
+      data: { photo: fileUrl },
+    });
 
-//       const [users, total] = await Promise.all([
-//         this.prisma.user.findMany({
-//           skip,
-//           take: limit,
-//           where,
-//           orderBy: { createdAt: order },
-//           include: { profile: true },
-//         }),
-//         this.prisma.user.count({ where }),
-//       ]);
+    return updatedProfile;
+  }
 
-//       return {
-//         data: users.map(({ password, ...u }) => u),
-//         meta: {
-//           total,
-//           page,
-//           lastPage: Math.ceil(total / limit),
-//         },
-//       };
-//     } catch (error) {
-//       console.log(error)
-//       throw new InternalServerErrorException('Failed to fetch users.');
-//     }
-//   }
+  async findAll(
+    page = 1,
+    limit = 10,
+    searchTerm?: string,
+    order: 'asc' | 'desc' = 'desc',
+    filters?: { [key: string]: any },
+  ) {
+    try {
+      const skip = (page - 1) * limit;
 
-//   // ✅ Get single user
-//   async findOne(id: number) {
-//     try {
-//       const user = await this.prisma.user.findUnique({
-//         where: { id },
-//         include: { profile: true },
-//       });
+      console.log(page, limit);
 
-//       if (!user) throw new NotFoundException('User not found');
-//       if (user.isDeleted) throw new NotFoundException('User already deleted!');
+      const searchFilter: Prisma.UserWhereInput = searchTerm
+        ? {
+            OR: [
+              {
+                profile: {
+                  fullName: {
+                    contains: searchTerm,
+                    mode: Prisma.QueryMode.insensitive,
+                  },
+                },
+              },
+              {
+                email: {
+                  contains: searchTerm,
+                  mode: Prisma.QueryMode.insensitive,
+                },
+              },
+            ],
+          }
+        : {};
 
-//       const { password, ...safeUser } = user;
-//       return safeUser;
-//     } catch (error) {
-//       if (error instanceof NotFoundException) throw error;
-//       throw new InternalServerErrorException('Failed to fetch user');
-//     }
-//   }
+      const where: Prisma.UserWhereInput = {
+        ...filters,
+        ...searchFilter,
+        isDeleted: false,
+      };
 
-//   // ✅ Soft delete
-//   async remove(id: number) {
-//     const existingUser = await this.prisma.user.findUnique({ where: { id } });
+      const [users, total] = await Promise.all([
+        this.prisma.user.findMany({
+          skip,
+          take: limit,
+          where,
+          orderBy: { createdAt: order },
+          include: { profile: true },
+        }),
+        this.prisma.user.count({ where }),
+      ]);
 
-//     if (!existingUser) throw new NotFoundException('User not found');
-//     if (existingUser.isDeleted) throw new BadRequestException('User is already deleted');
+      return {
+        data: users.map(({ ...u }) => u),
+        meta: {
+          total,
+          page,
+          lastPage: Math.ceil(total / limit),
+        },
+      };
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException('Failed to fetch users.');
+    }
+  }
 
-//     const deletedUser = await this.prisma.user.update({
-//       where: { id },
-//       data: { isDeleted: true },
-//     });
+  async findOne(id: string) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id },
+        include: { profile: true, notificationSettings: true },
+      });
 
-//     const { password, ...safeUser } = deletedUser;
-//     return safeUser;
-//   }
-// }
+      if (!user) throw new NotFoundException('User not found');
+      if (user.isDeleted) throw new NotFoundException('User already deleted!');
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password, ...safeUser } = user;
+      return safeUser;
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException('Failed to fetch user');
+    }
+  }
+
+  async remove(id: string) {
+    const existingUser = await this.prisma.user.findUnique({ where: { id } });
+
+    if (!existingUser) throw new NotFoundException('User not found');
+    if (existingUser.isDeleted)
+      throw new BadRequestException('User is already deleted');
+
+    const deletedUser = await this.prisma.user.update({
+      where: { id },
+      data: { isDeleted: true },
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...safeUser } = deletedUser;
+    return safeUser;
+  }
+}

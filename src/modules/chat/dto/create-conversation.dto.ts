@@ -1,3 +1,3 @@
 export class CreateConversationDto {
-    title: string;
+  title: string;
 }

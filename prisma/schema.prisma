@@ -39,10 +39,25 @@ model User {
   // vitalSigns              VitalSigns?
   emotionEntries          EmotionEntry[]
   MedicalReports          MedicalReport[]
-   // Relation with notifications
-  notifications  Notification[]
+  // Relation with notifications
+  notifications           Notification[]
+  notificationSettings    NotificationSettings?
 
   @@index([createdAt])
+}
+
+model NotificationSettings {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  doNotDisturb         Boolean  @default(false)
+  systemAlerts         Boolean  @default(true)
+  personalizedNudges   Boolean  @default(true)
+  wellnessNudges       Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
 
 model Profile {
@@ -102,20 +117,18 @@ model EmotionEntry {
 //   @@index([userId])
 // }
 
-
-
 model Notification {
-  id         String   @id @default(uuid())
-  userId     String
-  title      String
-  body       Json? 
-  eventId  String?  
-  createdAt  DateTime  @default(now())
+  id        String                 @id @default(uuid())
+  userId    String
+  title     String
+  body      Json?
+  eventId   String?
+  category  NotificationCategory
+  createdAt DateTime               @default(now())
 
   // Relations
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
-
 
 model DeviceIntegration {
   id                      String    @id @default(cuid()) // Changed to CUID
@@ -138,7 +151,7 @@ model DeviceIntegration {
 
 model Nudge {
   id              String        @id @default(cuid()) // Changed to CUID
-  userId          String 
+  userId          String
   title           String
   category        NudgeCategory
   targetAmount    Float?
@@ -423,13 +436,11 @@ model Chat {
   @@index([createdAt])
 }
 
-
-
-
-
-
-
-
+enum NotificationCategory {
+  SYSTEM_ALERTS
+  PERSONALIZED_NUDGES
+  WELLNESS_NUDGES
+}
 
 enum Language {
   EN

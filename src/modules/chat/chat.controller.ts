@@ -7,9 +7,6 @@
 // import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 // import { RolesGuard } from '../auth/guards/role-auth.guard';
 
-
-
-
 // @UseGuards(JwtAuthGuard, RolesGuard)
 // @Controller('chat')
 // export class ChatController {
@@ -70,7 +67,6 @@
 
 //         return successResponse(result, 'Conversation deleted successfully');
 //     }
-
 
 //     // Get all messages of a conversation
 //     @Roles('ADMIN', 'USER')

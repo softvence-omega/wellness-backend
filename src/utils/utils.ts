@@ -22,7 +22,7 @@ export class DateUtils {
 
   static getDateRange(date?: string, range?: 'day' | 'week' | 'month') {
     const targetDate = date ? this.parseDate(date) : new Date();
-    
+
     let startDate: Date;
     let endDate: Date;
 

@@ -1,15 +1,15 @@
 // src/health-data/dto/create-health-data.dto.ts
-import { 
-  IsString, 
-  IsNumber, 
-  IsOptional, 
-  IsObject, 
-  IsDate, 
-  IsEnum, 
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsObject,
+  IsDate,
+  IsEnum,
   IsBoolean,
   IsArray,
   ValidateNested,
-  ArrayMinSize 
+  ArrayMinSize,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { WorkoutType, DataQuality } from '@prisma/client';
@@ -41,29 +41,29 @@ export class WorkoutDataDto {
 }
 
 export class CreateHealthDataDto {
-  @IsString() 
+  @IsString()
   userId: string;
-  
+
   // Core metrics
   @IsOptional() @IsNumber() steps?: number;
   @IsOptional() @IsNumber() heartRate?: number;
   @IsOptional() @IsNumber() activeCalories?: number;
   @IsOptional() @IsNumber() restingHeartRate?: number;
   @IsOptional() @IsNumber() heartRateVariability?: number;
-  
+
   // Nested data
   @IsOptional() @IsObject() sleepData?: SleepDataDto;
   @IsOptional() @IsObject() workoutData?: WorkoutDataDto;
-  
+
   // Apple Watch metadata
   @IsOptional() @IsString() dataSource?: string;
   @IsOptional() @IsString() deviceName?: string;
   @IsOptional() @IsString() syncSessionId?: string;
-  
+
   // Time range (required for Apple Watch data)
   @IsDate() @Type(() => Date) startTime: Date;
   @IsDate() @Type(() => Date) endTime: Date;
-  
+
   // Data quality
   @IsOptional() @IsBoolean() isManualEntry?: boolean;
   @IsOptional() @IsEnum(DataQuality) dataQuality?: DataQuality;

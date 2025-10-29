@@ -8,12 +8,20 @@ import { EventTypeService } from './event/event.service';
 import { BullModule } from '@nestjs/bullmq';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 
-
 @Global()
 @Module({
- imports: [ BullModule.registerQueue({ name: 'notification' }), EventEmitterModule.forRoot(),],
-  providers: [ FirebaseService, EventService,EventTypeService , NotificationService, JwtService],
-  exports:[NotificationService,],
-  controllers: [NotificationController]
+  imports: [
+    BullModule.registerQueue({ name: 'notification' }),
+    EventEmitterModule.forRoot(),
+  ],
+  providers: [
+    FirebaseService,
+    EventService,
+    EventTypeService,
+    NotificationService,
+    JwtService,
+  ],
+  exports: [NotificationService],
+  controllers: [NotificationController],
 })
 export class NotificationModule {}

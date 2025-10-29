@@ -1,6 +1,5 @@
-
-import { ReportType } from "@prisma/client";
-import { JsonValue } from "@prisma/client/runtime/library";
+import { ReportType } from '@prisma/client';
+import { JsonValue } from '@prisma/client/runtime/library';
 // Import the custom type
 
 export interface LabValue {
@@ -27,7 +26,7 @@ export interface IMedicalReport {
   reportDate?: Date;
   labName?: string | null;
   doctorName?: string | null;
-  reportData?: JsonValue;  // Use the custom JsonValue type
+  reportData?: JsonValue; // Use the custom JsonValue type
   userId: string;
   createdAt: Date;
   updatedAt: Date;
@@ -41,7 +40,7 @@ export interface ICreateMedicalReport {
   reportDate: Date;
   labName?: string;
   doctorName?: string;
-  reportData: ReportData;  // Keep strict type for creation/validation
+  reportData: ReportData; // Keep strict type for creation/validation
   userId: string;
 }
 

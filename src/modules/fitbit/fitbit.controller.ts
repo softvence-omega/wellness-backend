@@ -26,8 +26,6 @@
 //         return this.fitbitService.getProfile(userId);
 //     }
 
-
-
 //     @Get('activity/:userId')
 //     getActivity(@Param('userId') userId: string, @Query('date') date?: string) {
 //         return this.fitbitService.getActivity(userId, date);

@@ -6,5 +6,5 @@ export interface NotificationJobPayload {
 }
 
 export interface NotificationEvent extends NotificationJobPayload {
-   fcmToken:string
+  fcmToken: string;
 }
