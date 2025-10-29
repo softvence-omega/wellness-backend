@@ -111,7 +111,7 @@ export class UsersController {
 
 
 
-   @Put()
+   @Put('notificatonsettings')
     async updateNotificationSettings(
       @Req() req: AuthenticatedRequest,
       @Body() dto: UpdateNotificationSettingsDto,
