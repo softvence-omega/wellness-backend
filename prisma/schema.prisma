@@ -32,7 +32,6 @@ model User {
   deviceIntegration       DeviceIntegration?
   labReports              LabReport[]
   meals                   Meal[]
-  notification            Notification?
   nudges                  Nudge[]
   profile                 Profile?
   tips                    Tip[]
@@ -40,8 +39,25 @@ model User {
   // vitalSigns              VitalSigns?
   emotionEntries          EmotionEntry[]
   MedicalReports          MedicalReport[]
+  // Relation with notifications
+  notifications           Notification[]
+  notificationSettings    NotificationSettings?
 
   @@index([createdAt])
+}
+
+model NotificationSettings {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  doNotDisturb         Boolean  @default(false)
+  systemAlerts         Boolean  @default(true)
+  personalizedNudges   Boolean  @default(true)
+  wellnessNudges       Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
 
 model Profile {
@@ -79,26 +95,39 @@ model EmotionEntry {
   @@index([emoji])
 }
 
-model Notification {
-  id                 String    @id @default(cuid()) // Changed to CUID
-  userId             String    @unique // Changed to String
-  activityReminders  Boolean   @default(false)
-  mealTracking       Boolean   @default(false)
-  sleepInsights      Boolean   @default(false)
-  progressUpdates    Boolean   @default(false)
-  waterIntake        Boolean   @default(false)
-  motivationalNudges Boolean   @default(false)
-  wellnessTips       Boolean   @default(false)
-  personalizedTips   Boolean   @default(false)
-  systemAlerts       Boolean   @default(false)
-  doNotDisturb       Boolean   @default(false)
-  doNotDisturbStart  DateTime?
-  doNotDisturbEnd    DateTime?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @default(now()) @updatedAt
-  user               User      @relation(fields: [userId], references: [id])
+// model Notification {
+//   id                 String    @id @default(cuid()) // Changed to CUID
+//   userId             String    @unique // Changed to String
+//   activityReminders  Boolean   @default(false)
+//   mealTracking       Boolean   @default(false)
+//   sleepInsights      Boolean   @default(false)
+//   progressUpdates    Boolean   @default(false)
+//   waterIntake        Boolean   @default(false)
+//   motivationalNudges Boolean   @default(false)
+//   wellnessTips       Boolean   @default(false)
+//   personalizedTips   Boolean   @default(false)
+//   systemAlerts       Boolean   @default(false)
+//   doNotDisturb       Boolean   @default(false)
+//   doNotDisturbStart  DateTime?
+//   doNotDisturbEnd    DateTime?
+//   createdAt          DateTime  @default(now())
+//   updatedAt          DateTime  @default(now()) @updatedAt
+//   user               User      @relation(fields: [userId], references: [id])
 
-  @@index([userId])
+//   @@index([userId])
+// }
+
+model Notification {
+  id        String                 @id @default(uuid())
+  userId    String
+  title     String
+  body      Json?
+  eventId   String?
+  category  NotificationCategory
+  createdAt DateTime               @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model DeviceIntegration {
@@ -122,7 +151,7 @@ model DeviceIntegration {
 
 model Nudge {
   id              String        @id @default(cuid()) // Changed to CUID
-  userId          String 
+  userId          String
   title           String
   category        NudgeCategory
   targetAmount    Float?
@@ -405,6 +434,12 @@ model Chat {
 
   @@index([conversationId])
   @@index([createdAt])
+}
+
+enum NotificationCategory {
+  SYSTEM_ALERTS
+  PERSONALIZED_NUDGES
+  WELLNESS_NUDGES
 }
 
 enum Language {

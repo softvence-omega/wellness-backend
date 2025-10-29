@@ -1,3 +1,5 @@
+import { Request } from 'express';
+
 // types/user.types.ts
 export interface UserResponse {
   id: string;
@@ -75,23 +77,31 @@ export interface SingleUserResponse {
 // Enums from your Prisma schema
 export enum UserRole {
   USER = 'USER',
-  ADMIN = 'ADMIN'
+  ADMIN = 'ADMIN',
 }
 
 export enum Language {
   EN = 'EN',
-  BN = 'BN'
+  BN = 'BN',
 }
 
 export enum Gender {
   MALE = 'MALE',
   FEMALE = 'FEMALE',
-  OTHER = 'OTHER'
+  OTHER = 'OTHER',
 }
 
 export enum HealthGoal {
   LOSE_WEIGHT = 'LOSE_WEIGHT',
   BUILD_MUSCLE = 'BUILD_MUSCLE',
   MAINTAIN_HEALTH = 'MAINTAIN_HEALTH',
-  IMPROVE = 'IMPROVE'
+  IMPROVE = 'IMPROVE',
+}
+
+export interface UserRequest extends Request {
+  user: {
+    userId: string;
+    email: string;
+    role: string;
+  };
 }

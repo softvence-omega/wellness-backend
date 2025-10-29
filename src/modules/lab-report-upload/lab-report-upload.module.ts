@@ -6,11 +6,10 @@ import { LabReportController } from './lab-report-upload.controller';
 import { LabReportService } from './lab-report-upload.service';
 import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
 
-
 @Module({
-  imports: [PrismaModule, CloudinaryModule], 
-  controllers: [LabReportController], 
-  providers: [LabReportService, CustomLogger], 
+  imports: [PrismaModule, CloudinaryModule],
+  controllers: [LabReportController],
+  providers: [LabReportService, CustomLogger],
   exports: [LabReportService],
 })
 export class LabReportFileUploadModule {}

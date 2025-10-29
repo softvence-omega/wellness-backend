@@ -14,7 +14,6 @@ import * as path from 'path';
 const env = process.env.NODE_ENV || 'development';
 const envPath = path.resolve(process.cwd(), `.env.${env}`);
 
-
 const result = dotenv.config({ path: envPath });
 if (result.error) {
   dotenv.config();
@@ -126,7 +125,7 @@ async function bootstrap() {
     });
 
     const mobileLimiter = rateLimit({
-      windowMs: 1 * 60 * 1000, 
+      windowMs: 1 * 60 * 1000,
       max: 30, // Higher burst for mobile apps
       message: {
         error: 'Mobile rate limit exceeded',
@@ -188,7 +187,7 @@ async function bootstrap() {
       new TransformInterceptor(reflector),
       new TimeoutInterceptor(
         configService.get<number>('MOBILE_REQUEST_TIMEOUT') || 15000,
-      ), 
+      ),
     );
 
     // API Versioning with mobile support
@@ -215,7 +214,7 @@ async function bootstrap() {
         // Web origins
         'http://localhost:3000',
         'http://localhost:3001',
-        'http://localhost:5173', 
+        'http://localhost:5173',
         'http://localhost:8080',
         'https://yourdomain.com',
         'https://www.yourdomain.com',
@@ -271,7 +270,7 @@ async function bootstrap() {
       const clientType =
         req.headers['x-client-type'] ||
         (userAgent.toLowerCase().includes('mobile') ? 'mobile' : 'web');
-      (req as any).client = {
+      req.client = {
         type: clientType,
         platform: req.headers['x-platform'] || 'unknown',
         version: req.headers['x-app-version'] || 'unknown',
@@ -281,7 +280,7 @@ async function bootstrap() {
       const requestId =
         req.headers['x-request-id'] ||
         `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      (req as any).requestId = requestId;
+      req.requestId = requestId;
       res.setHeader('X-Request-ID', requestId);
 
       next();

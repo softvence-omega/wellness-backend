@@ -1,10 +1,18 @@
 // src/emotions/emotions.service.ts
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 
 import { EmotionQueryDto } from './dto/emotion-query.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateEmotionDto } from './dto/create-emotion-reaction.dto';
-import { EmotionStatsDto, EmotionSummaryDto, MostFrequentEmojiDto } from './dto/emotions-response.dto';
+import {
+  EmotionStatsDto,
+  EmotionSummaryDto,
+  MostFrequentEmojiDto,
+} from './dto/emotions-response.dto';
 
 interface EmojiCount {
   [emoji: string]: number;
@@ -25,33 +33,93 @@ interface DailyCounts {
 // Emoji mappings
 const EMOJI_MAPPINGS = {
   '😊': { emotion: 'Happy', color: '#F7B125', description: 'Feeling happy' },
-  '😂': { emotion: 'Laughing', color: '#F7B125', description: 'Finding something funny' },
+  '😂': {
+    emotion: 'Laughing',
+    color: '#F7B125',
+    description: 'Finding something funny',
+  },
   '🥰': { emotion: 'Loved', color: '#F35369', description: 'Feeling loved' },
-  '😍': { emotion: 'In Love', color: '#F35369', description: 'Feeling romantic' },
-  '🤩': { emotion: 'Excited', color: '#F7B125', description: 'Feeling excited' },
+  '😍': {
+    emotion: 'In Love',
+    color: '#F35369',
+    description: 'Feeling romantic',
+  },
+  '🤩': {
+    emotion: 'Excited',
+    color: '#F7B125',
+    description: 'Feeling excited',
+  },
   '😎': { emotion: 'Cool', color: '#1877F2', description: 'Feeling confident' },
-  '🥳': { emotion: 'Celebrating', color: '#F7B125', description: 'Celebrating' },
+  '🥳': {
+    emotion: 'Celebrating',
+    color: '#F7B125',
+    description: 'Celebrating',
+  },
   '😢': { emotion: 'Sad', color: '#1877F2', description: 'Feeling sad' },
   '😭': { emotion: 'Crying', color: '#1877F2', description: 'Very sad' },
-  '😔': { emotion: 'Pensive', color: '#1877F2', description: 'Feeling thoughtful' },
+  '😔': {
+    emotion: 'Pensive',
+    color: '#1877F2',
+    description: 'Feeling thoughtful',
+  },
   '😠': { emotion: 'Angry', color: '#E9710F', description: 'Feeling angry' },
   '😡': { emotion: 'Furious', color: '#E9710F', description: 'Very angry' },
   '🤯': { emotion: 'Mind-blown', color: '#8B5CF6', description: 'Amazed' },
   '😴': { emotion: 'Sleepy', color: '#1877F2', description: 'Tired' },
-  '😋': { emotion: 'Playful', color: '#F7B125', description: 'Feeling playful' },
+  '😋': {
+    emotion: 'Playful',
+    color: '#F7B125',
+    description: 'Feeling playful',
+  },
   '🤢': { emotion: 'Sick', color: '#10B981', description: 'Feeling unwell' },
-  '😰': { emotion: 'Anxious', color: '#8B5CF6', description: 'Feeling anxious' },
+  '😰': {
+    emotion: 'Anxious',
+    color: '#8B5CF6',
+    description: 'Feeling anxious',
+  },
   '😨': { emotion: 'Scared', color: '#8B5CF6', description: 'Feeling scared' },
-  '🤗': { emotion: 'Hugging', color: '#F35369', description: 'Feeling affectionate' },
-  '🤔': { emotion: 'Thinking', color: '#6B7280', description: 'Deep in thought' },
-  '🙄': { emotion: 'Sarcastic', color: '#6B7280', description: 'Feeling sarcastic' },
+  '🤗': {
+    emotion: 'Hugging',
+    color: '#F35369',
+    description: 'Feeling affectionate',
+  },
+  '🤔': {
+    emotion: 'Thinking',
+    color: '#6B7280',
+    description: 'Deep in thought',
+  },
+  '🙄': {
+    emotion: 'Sarcastic',
+    color: '#6B7280',
+    description: 'Feeling sarcastic',
+  },
   '😏': { emotion: 'Smirking', color: '#6B7280', description: 'Feeling sly' },
-  '🔥': { emotion: 'Energetic', color: '#FF6B00', description: 'Full of energy' },
-  '🌟': { emotion: 'Amazing', color: '#F7B125', description: 'Feeling amazing' },
-  '💪': { emotion: 'Strong', color: '#10B981', description: 'Feeling powerful' },
-  '🙏': { emotion: 'Thankful', color: '#10B981', description: 'Feeling grateful' },
-  '💔': { emotion: 'Heartbroken', color: '#F35369', description: 'Feeling heartbroken' },
-  '❤️': { emotion: 'Love', color: '#F35369', description: 'Feeling loving' }
+  '🔥': {
+    emotion: 'Energetic',
+    color: '#FF6B00',
+    description: 'Full of energy',
+  },
+  '🌟': {
+    emotion: 'Amazing',
+    color: '#F7B125',
+    description: 'Feeling amazing',
+  },
+  '💪': {
+    emotion: 'Strong',
+    color: '#10B981',
+    description: 'Feeling powerful',
+  },
+  '🙏': {
+    emotion: 'Thankful',
+    color: '#10B981',
+    description: 'Feeling grateful',
+  },
+  '💔': {
+    emotion: 'Heartbroken',
+    color: '#F35369',
+    description: 'Feeling heartbroken',
+  },
+  '❤️': { emotion: 'Love', color: '#F35369', description: 'Feeling loving' },
 };
 
 const SUPPORTED_EMOJIS = Object.keys(EMOJI_MAPPINGS);
@@ -69,9 +137,11 @@ export class EmotionsService {
   }
 
   async createEmotion(createEmotionDto: CreateEmotionDto) {
-
     console.log('createEmotion called - prisma:', this.prisma);
-    console.log('createEmotion called - prisma.emotionEntry:', this.prisma?.emotionEntry);
+    console.log(
+      'createEmotion called - prisma.emotionEntry:',
+      this.prisma?.emotionEntry,
+    );
     const { userId, emoji, note, intensity } = createEmotionDto;
 
     // Validate user exists
@@ -141,7 +211,7 @@ export class EmotionsService {
     };
   }
 
-private async getEmotionStats(emotions: any[]): Promise<EmotionStatsDto> {
+  private async getEmotionStats(emotions: any[]): Promise<EmotionStatsDto> {
     if (emotions.length === 0) {
       return {
         totalEntries: 0,
@@ -151,16 +221,21 @@ private async getEmotionStats(emotions: any[]): Promise<EmotionStatsDto> {
       };
     }
 
-    const emojiCount: Record<string, number> = emotions.reduce((acc, emotion) => {
-      acc[emotion.emoji] = (acc[emotion.emoji] || 0) + 1;
-      return acc;
-    }, {});
-
-    const mostFrequentEmoji = Object.keys(emojiCount).reduce((a, b) =>
-      emojiCount[a] > emojiCount[b] ? a : b
+    const emojiCount: Record<string, number> = emotions.reduce(
+      (acc, emotion) => {
+        acc[emotion.emoji] = (acc[emotion.emoji] || 0) + 1;
+        return acc;
+      },
+      {},
     );
 
-    const emotionBreakdown: EmotionSummaryDto[] = Object.entries(emojiCount).map(([emoji, count]) => ({
+    const mostFrequentEmoji = Object.keys(emojiCount).reduce((a, b) =>
+      emojiCount[a] > emojiCount[b] ? a : b,
+    );
+
+    const emotionBreakdown: EmotionSummaryDto[] = Object.entries(
+      emojiCount,
+    ).map(([emoji, count]) => ({
       emoji,
       emotion: EMOJI_MAPPINGS[emoji]?.emotion || 'Unknown',
       count,
@@ -169,7 +244,8 @@ private async getEmotionStats(emotions: any[]): Promise<EmotionStatsDto> {
     }));
 
     const averageIntensity = Math.round(
-      emotions.reduce((sum, emotion) => sum + emotion.intensity, 0) / emotions.length
+      emotions.reduce((sum, emotion) => sum + emotion.intensity, 0) /
+        emotions.length,
     );
 
     const mostFrequentEmojiDto: MostFrequentEmojiDto = {
@@ -218,12 +294,14 @@ private async getEmotionStats(emotions: any[]): Promise<EmotionStatsDto> {
       return acc;
     }, {});
 
-    const trends = Object.entries(dailyAverages).map(([date, data]: [string, any]) => ({
-      date,
-      averageIntensity: Math.round(data.totalIntensity / data.count),
-      dominantEmoji: this.getMostFrequentEmoji(data.emotions),
-      entryCount: data.count,
-    }));
+    const trends = Object.entries(dailyAverages).map(
+      ([date, data]: [string, any]) => ({
+        date,
+        averageIntensity: Math.round(data.totalIntensity / data.count),
+        dominantEmoji: this.getMostFrequentEmoji(data.emotions),
+        entryCount: data.count,
+      }),
+    );
 
     return trends;
   }
@@ -233,7 +311,7 @@ private async getEmotionStats(emotions: any[]): Promise<EmotionStatsDto> {
       acc[emoji] = (acc[emoji] || 0) + 1;
       return acc;
     }, {});
-    return Object.keys(count).reduce((a, b) => count[a] > count[b] ? a : b);
+    return Object.keys(count).reduce((a, b) => (count[a] > count[b] ? a : b));
   }
 
   private getDateFilter(range: string) {

@@ -5,7 +5,7 @@ const logFormat = format.combine(
   format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   format.errors({ stack: true }),
   format.json(),
-  format.prettyPrint()
+  format.prettyPrint(),
 );
 
 const consoleFormat = format.combine(
@@ -13,17 +13,17 @@ const consoleFormat = format.combine(
   format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   format.printf(({ timestamp, level, message, stack, ...meta }) => {
     let log = `${timestamp} [${level}]: ${message}`;
-    
+
     if (stack) {
       log += `\n${stack}`;
     }
-    
+
     if (Object.keys(meta).length > 0) {
       log += `\n${JSON.stringify(meta, null, 2)}`;
     }
-    
+
     return log;
-  })
+  }),
 );
 
 export const winstonLogger = createLogger({

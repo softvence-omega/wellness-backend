@@ -7,7 +7,6 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CustomLogger } from 'src/logger/logger.service';
 import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
 
-
 @Module({
   imports: [
     // Import JwtModule if your MealService needs it, otherwise remove

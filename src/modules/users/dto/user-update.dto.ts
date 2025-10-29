@@ -1,4 +1,11 @@
-import { IsOptional, IsString, IsDateString, IsEnum, IsNumberString, IsBoolean } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsDateString,
+  IsEnum,
+  IsNumberString,
+  IsBoolean,
+} from 'class-validator';
 import { Gender, HealthGoal } from '@prisma/client';
 
 // 👇 match your Role enum from Prisma
@@ -39,19 +46,10 @@ export class UpdateProfileDto {
   healthGoal?: HealthGoal;
 
   @IsOptional()
-  @IsString()
-  photo?: string;
-
-  @IsOptional()
   @IsBoolean()
   isEnableNotification?: boolean;
-
-
 
   @IsOptional()
   @IsEnum(Language, { message: 'Language must be EN or BN' })
   language?: Language;
 }
-
-
-

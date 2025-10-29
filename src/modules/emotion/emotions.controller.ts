@@ -47,7 +47,8 @@ export class EmotionsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id') id: string) { // Remove ParseUUIDPipe
+  async remove(@Param('id') id: string) {
+    // Remove ParseUUIDPipe
     return this.emotionsService.deleteEmotion(id);
   }
 }

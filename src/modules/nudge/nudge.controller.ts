@@ -56,7 +56,7 @@ export class NudgesController {
     return this.nudgesService.create(req.user.userId, createNudgeDto);
   }
 
-@Get()
+  @Get()
   @ApiOperation({
     summary: 'Get all nudges for a user with optional filters and pagination',
     description:
@@ -69,7 +69,8 @@ export class NudgesController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Invalid query parameters (e.g., invalid date format or cursor).',
+    description:
+      'Invalid query parameters (e.g., invalid date format or cursor).',
   })
   async findAll(
     @Request() req,

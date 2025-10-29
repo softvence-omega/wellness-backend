@@ -1,15 +1,82 @@
+// import { Module } from '@nestjs/common';
+// // import { ChatModule } from './modules/chat/chat.module';
+
+// import { DeviceIntegrationModule } from './modules/device-integration/device-integration.module';
+// import { ProfileModule } from './modules/profile/profile.module';
+
+// import { TipsModule } from './modules/tips/tips.module';
+// import { UsersModule } from './modules/users/users.module';
+// import { VitalsModule } from './modules/vitals/vitals.module';
+// import { AuthModule } from './modules/auth/auth.module';
+// import { GoogleService } from './modules/google/google.service';
+// import { ConfigModule } from '@nestjs/config';
+// import { MealsModule } from './modules/meals/meals.module';
+// import { CloudinaryModule } from './cloudinary/cloudinary.module';
+// import { EmotionsModule } from './modules/emotion/emotions.module';
+// import { HealthDataModule } from './modules/watch-data/watch-data.module';
+// import { MedicalLabReportsModule } from './modules/lab-reports/lab-reports.module';
+// import { NudgeModule } from './modules/nudge/nudge.module';
+// import { LabReportFileUploadModule } from './modules/lab-report-upload/lab-report-upload.module';
+// import { ThrottlerModule } from '@nestjs/throttler';
+// import { NotificationModule } from './modules/notifications/notification.module';
+// // import { FitbitModule } from './modules/fitbit/fitbit.module';
+// // import { NudgeModule } from './modules/nudge/nudge.module';
+// // import { StravaModule } from './modules/strava/strava.module';
+
+// @Module({
+//   imports: [
+//     ConfigModule.forRoot({
+//       isGlobal: true,
+//     }),
+//     ThrottlerModule.forRoot({
+//       ttl: 60,
+//       limit: 100,
+//     } as any),
+//     AuthModule,
+//     UsersModule,
+//     DeviceIntegrationModule,
+//     ProfileModule,
+//     MealsModule,
+//     TipsModule,
+//     VitalsModule,
+//     CloudinaryModule,
+//     EmotionsModule,
+//     HealthDataModule,
+//     MedicalLabReportsModule,
+//     NudgeModule,
+//     LabReportFileUploadModule,
+//     NotificationModule,
+    
+    
+//   ],
+//   controllers: [],
+//   providers: [GoogleService],
+// })
+// export class AppModule {}
+
+
+
 import { Module } from '@nestjs/common';
-// import { ChatModule } from './modules/chat/chat.module';
+import { BullModule } from '@nestjs/bullmq';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+
+// Load .env dynamically based on environment
+const env = process.env.NODE_ENV || 'development';
+const envPath = path.resolve(process.cwd(), `.env.${env}`);
+
+const result = dotenv.config({ path: envPath });
+if (result.error) {
+  dotenv.config(); // fallback to .env
+}
 
 import { DeviceIntegrationModule } from './modules/device-integration/device-integration.module';
 import { ProfileModule } from './modules/profile/profile.module';
-
 import { TipsModule } from './modules/tips/tips.module';
-// import { UsersModule } from './modules/users/users.module';
+import { UsersModule } from './modules/users/users.module';
 import { VitalsModule } from './modules/vitals/vitals.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { GoogleService } from './modules/google/google.service';
-import { ConfigModule } from '@nestjs/config';
 import { MealsModule } from './modules/meals/meals.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { EmotionsModule } from './modules/emotion/emotions.module';
@@ -18,20 +85,17 @@ import { MedicalLabReportsModule } from './modules/lab-reports/lab-reports.modul
 import { NudgeModule } from './modules/nudge/nudge.module';
 import { LabReportFileUploadModule } from './modules/lab-report-upload/lab-report-upload.module';
 import { ThrottlerModule } from '@nestjs/throttler';
-// import { FitbitModule } from './modules/fitbit/fitbit.module';
-// import { NudgeModule } from './modules/nudge/nudge.module';
-// import { StravaModule } from './modules/strava/strava.module';
+import { NotificationModule } from './modules/notifications/notification.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
     ThrottlerModule.forRoot({
       ttl: 60,
       limit: 100,
     } as any),
+
     AuthModule,
+    UsersModule,
     DeviceIntegrationModule,
     ProfileModule,
     MealsModule,
@@ -43,8 +107,17 @@ import { ThrottlerModule } from '@nestjs/throttler';
     MedicalLabReportsModule,
     NudgeModule,
     LabReportFileUploadModule,
+    NotificationModule,
+
+    
+    BullModule.forRoot({
+      connection: {
+        url: process.env.REDIS_CONNECTION_URL,
+      },
+    }),
   ],
   controllers: [],
   providers: [GoogleService],
 })
 export class AppModule {}
+

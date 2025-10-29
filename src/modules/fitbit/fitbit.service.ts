@@ -84,8 +84,6 @@
 //   }
 // }
 
-
-
 //     async getAccessToken(userId: string): Promise<string> {
 //         // Database থেকে user fetch করে access token নেওয়া
 //         const user = await this.prisma.user.findUnique({
@@ -98,7 +96,6 @@
 //         }
 //         return user.fitbitAccessToken;
 //     }
-
 
 //     private async fetchFromFitbit(userId: string, url: string) {
 //         const accessToken =await this.getAccessToken(userId);
@@ -115,7 +112,6 @@
 //     async getProfile(userId: string) {
 //         return this.fetchFromFitbit(userId, 'https://api.fitbit.com/1/user/-/profile.json');
 //     }
-
 
 //     async getActivity(userId: string, date: string = today()) {
 //         return this.fetchFromFitbit(userId, `https://api.fitbit.com/1/user/-/activities/date/${date}.json`);

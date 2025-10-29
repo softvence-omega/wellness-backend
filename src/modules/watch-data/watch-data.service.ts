@@ -1,5 +1,9 @@
 // src/health-data/health-data.service.ts
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 
 import { CreateHealthDataDto } from './dto/create-health-data.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -51,20 +55,20 @@ export class HealthDataService {
   constructor(private prisma: PrismaService) {}
 
   async syncAppleWatchData(createHealthDataDto: CreateHealthDataDto) {
-    const { 
-      userId, 
-      steps, 
-      heartRate, 
-      activeCalories, 
+    const {
+      userId,
+      steps,
+      heartRate,
+      activeCalories,
       restingHeartRate,
       heartRateVariability,
-      sleepData, 
+      sleepData,
       workoutData,
-      startTime, 
+      startTime,
       endTime,
       dataSource = 'com.apple.health',
       deviceName = 'Apple Watch',
-      syncSessionId 
+      syncSessionId,
     } = createHealthDataDto;
 
     // Validate user exists
@@ -78,7 +82,9 @@ export class HealthDataService {
 
     // Validate time range
     if (!startTime || !endTime) {
-      throw new BadRequestException('startTime and endTime are required for Apple Watch data');
+      throw new BadRequestException(
+        'startTime and endTime are required for Apple Watch data',
+      );
     }
 
     if (endTime <= startTime) {
@@ -118,34 +124,42 @@ export class HealthDataService {
         syncSessionId,
         isManualEntry: false,
         dataQuality: 'GOOD',
-        sleepData: sleepData ? {
-          create: {
-            deepMinutes: sleepData.deepMinutes,
-            lightMinutes: sleepData.lightMinutes,
-            remMinutes: sleepData.remMinutes,
-            awakeMinutes: sleepData.awakeMinutes,
-            coreMinutes: sleepData.coreMinutes,
-            sleepEfficiency: sleepData.sleepEfficiency,
-            timeInBed: sleepData.timeInBed,
-            sleepLatency: sleepData.sleepLatency,
-            bedtimeStart: sleepData.bedtimeStart ? new Date(sleepData.bedtimeStart) : undefined,
-            bedtimeEnd: sleepData.bedtimeEnd ? new Date(sleepData.bedtimeEnd) : undefined,
-            consistency: sleepData.consistency,
-          },
-        } : undefined,
-        workoutData: workoutData ? {
-          create: {
-            workoutType: workoutData.workoutType,
-            duration: workoutData.duration,
-            totalDistance: workoutData.totalDistance,
-            totalEnergy: workoutData.totalEnergy,
-            avgHeartRate: workoutData.avgHeartRate,
-            maxHeartRate: workoutData.maxHeartRate,
-            minHeartRate: workoutData.minHeartRate,
-            elevation: workoutData.elevation,
-            routeData: workoutData.routeData,
-          },
-        } : undefined,
+        sleepData: sleepData
+          ? {
+              create: {
+                deepMinutes: sleepData.deepMinutes,
+                lightMinutes: sleepData.lightMinutes,
+                remMinutes: sleepData.remMinutes,
+                awakeMinutes: sleepData.awakeMinutes,
+                coreMinutes: sleepData.coreMinutes,
+                sleepEfficiency: sleepData.sleepEfficiency,
+                timeInBed: sleepData.timeInBed,
+                sleepLatency: sleepData.sleepLatency,
+                bedtimeStart: sleepData.bedtimeStart
+                  ? new Date(sleepData.bedtimeStart)
+                  : undefined,
+                bedtimeEnd: sleepData.bedtimeEnd
+                  ? new Date(sleepData.bedtimeEnd)
+                  : undefined,
+                consistency: sleepData.consistency,
+              },
+            }
+          : undefined,
+        workoutData: workoutData
+          ? {
+              create: {
+                workoutType: workoutData.workoutType,
+                duration: workoutData.duration,
+                totalDistance: workoutData.totalDistance,
+                totalEnergy: workoutData.totalEnergy,
+                avgHeartRate: workoutData.avgHeartRate,
+                maxHeartRate: workoutData.maxHeartRate,
+                minHeartRate: workoutData.minHeartRate,
+                elevation: workoutData.elevation,
+                routeData: workoutData.routeData,
+              },
+            }
+          : undefined,
       },
       include: {
         sleepData: true,
@@ -154,107 +168,113 @@ export class HealthDataService {
     });
   }
 
-  async batchSyncAppleWatchData(healthDataArray: CreateHealthDataDto[]): Promise<BatchSyncResponse> {
+  async batchSyncAppleWatchData(
+    healthDataArray: CreateHealthDataDto[],
+  ): Promise<BatchSyncResponse> {
     const results: BatchSyncResult[] = [];
-    
+
     for (const healthData of healthDataArray) {
       try {
         const result = await this.syncAppleWatchData(healthData);
         results.push({ success: true, data: result });
       } catch (error: any) {
-        results.push({ 
-          success: false, 
+        results.push({
+          success: false,
           error: error.message,
-          data: healthData 
+          data: healthData,
         });
       }
     }
 
     return {
       total: healthDataArray.length,
-      successful: results.filter(r => r.success).length,
-      failed: results.filter(r => !r.success).length,
+      successful: results.filter((r) => r.success).length,
+      failed: results.filter((r) => !r.success).length,
       results,
     };
   }
-async getUserHealthData(userId: string, date?: string, range?: 'day' | 'week' | 'month'): Promise<HealthDataResponse> {
-  const user = await this.prisma.user.findUnique({
-    where: { id: userId },
-  });
-
-  if (!user) {
-    throw new NotFoundException(`User with ID ${userId} not found`);
-  }
-
-  try {
-    const { startDate, endDate } = DateUtils.getDateRange(date, range);
-
-    const healthData = await this.prisma.healthData.findMany({
-      where: {
-        userId,
-        startTime: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
-      include: {
-        sleepData: true,
-        workoutData: true,
-      },
-      orderBy: { startTime: 'asc' },
+  async getUserHealthData(
+    userId: string,
+    date?: string,
+    range?: 'day' | 'week' | 'month',
+  ): Promise<HealthDataResponse> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
     });
 
-    return this.calculateHealthSummary(healthData);
-  } catch (error) {
-    throw new BadRequestException('Invalid date parameters');
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    try {
+      const { startDate, endDate } = DateUtils.getDateRange(date, range);
+
+      const healthData = await this.prisma.healthData.findMany({
+        where: {
+          userId,
+          startTime: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+        include: {
+          sleepData: true,
+          workoutData: true,
+        },
+        orderBy: { startTime: 'asc' },
+      });
+
+      return this.calculateHealthSummary(healthData);
+    } catch (error) {
+      throw new BadRequestException('Invalid date parameters');
+    }
   }
-}
 
-//   async getUserHealthData(userId: string, date: string, range?: 'day' | 'week' | 'month'): Promise<HealthDataResponse> {
-//     const user = await this.prisma.user.findUnique({
-//       where: { id: userId },
-//     });
+  //   async getUserHealthData(userId: string, date: string, range?: 'day' | 'week' | 'month'): Promise<HealthDataResponse> {
+  //     const user = await this.prisma.user.findUnique({
+  //       where: { id: userId },
+  //     });
 
-//     if (!user) {
-//       throw new NotFoundException(`User with ID ${userId} not found`);
-//     }
+  //     if (!user) {
+  //       throw new NotFoundException(`User with ID ${userId} not found`);
+  //     }
 
-//     let startDate: Date;
-//     let endDate: Date;
+  //     let startDate: Date;
+  //     let endDate: Date;
 
-//     if (range === 'week') {
-//       startDate = new Date(date);
-//       startDate.setDate(startDate.getDate() - 7);
-//       endDate = new Date(date);
-//     } else if (range === 'month') {
-//       startDate = new Date(date);
-//       startDate.setMonth(startDate.getMonth() - 1);
-//       endDate = new Date(date);
-//     } else {
-//       // Default to single day
-//       startDate = new Date(date);
-//       startDate.setHours(0, 0, 0, 0);
-//       endDate = new Date(date);
-//       endDate.setHours(23, 59, 59, 999);
-//     }
+  //     if (range === 'week') {
+  //       startDate = new Date(date);
+  //       startDate.setDate(startDate.getDate() - 7);
+  //       endDate = new Date(date);
+  //     } else if (range === 'month') {
+  //       startDate = new Date(date);
+  //       startDate.setMonth(startDate.getMonth() - 1);
+  //       endDate = new Date(date);
+  //     } else {
+  //       // Default to single day
+  //       startDate = new Date(date);
+  //       startDate.setHours(0, 0, 0, 0);
+  //       endDate = new Date(date);
+  //       endDate.setHours(23, 59, 59, 999);
+  //     }
 
-//     const healthData = await this.prisma.healthData.findMany({
-//       where: {
-//         userId,
-//         startTime: {
-//           gte: startDate,
-//           lte: endDate,
-//         },
-//       },
-//       include: {
-//         sleepData: true,
-//         workoutData: true,
-//       },
-//       orderBy: { startTime: 'asc' },
-//     });
+  //     const healthData = await this.prisma.healthData.findMany({
+  //       where: {
+  //         userId,
+  //         startTime: {
+  //           gte: startDate,
+  //           lte: endDate,
+  //         },
+  //       },
+  //       include: {
+  //         sleepData: true,
+  //         workoutData: true,
+  //       },
+  //       orderBy: { startTime: 'asc' },
+  //     });
 
-//     return this.calculateHealthSummary(healthData);
-//   }
+  //     return this.calculateHealthSummary(healthData);
+  //   }
 
   private async updateHealthData(id: string, updateData: CreateHealthDataDto) {
     return this.prisma.healthData.update({
@@ -284,11 +304,16 @@ async getUserHealthData(userId: string, date?: string, range?: 'day' | 'week' | 
 
     const summary: HealthSummary = {
       totalSteps: healthData.reduce((sum, data) => sum + (data.steps || 0), 0),
-      avgHeartRate: this.calculateAverage(healthData.map(d => d.heartRate)),
-      avgRestingHeartRate: this.calculateAverage(healthData.map(d => d.restingHeartRate)),
-      totalActiveCalories: healthData.reduce((sum, data) => sum + (data.activeCalories || 0), 0),
+      avgHeartRate: this.calculateAverage(healthData.map((d) => d.heartRate)),
+      avgRestingHeartRate: this.calculateAverage(
+        healthData.map((d) => d.restingHeartRate),
+      ),
+      totalActiveCalories: healthData.reduce(
+        (sum, data) => sum + (data.activeCalories || 0),
+        0,
+      ),
       totalSleepHours: this.calculateTotalSleep(healthData),
-      workoutCount: healthData.filter(d => d.workoutData).length,
+      workoutCount: healthData.filter((d) => d.workoutData).length,
       dataPoints: healthData.length,
       timeRange: {
         start: healthData[0].startTime,
@@ -305,18 +330,25 @@ async getUserHealthData(userId: string, date?: string, range?: 'day' | 'week' | 
   private calculateAverage(values: (number | null | undefined)[]): number {
     const validValues = values.filter((v): v is number => v != null);
     if (validValues.length === 0) return 0;
-    return Number((validValues.reduce((a, b) => a + b, 0) / validValues.length).toFixed(1));
+    return Number(
+      (validValues.reduce((a, b) => a + b, 0) / validValues.length).toFixed(1),
+    );
   }
 
   private calculateTotalSleep(healthData: any[]): number {
     const totalSleepMinutes = healthData.reduce((sum, data) => {
       if (data.sleepData) {
         const sleep = data.sleepData;
-        return sum + (sleep.deepMinutes || 0) + (sleep.lightMinutes || 0) + (sleep.remMinutes || 0);
+        return (
+          sum +
+          (sleep.deepMinutes || 0) +
+          (sleep.lightMinutes || 0) +
+          (sleep.remMinutes || 0)
+        );
       }
       return sum;
     }, 0);
-    
+
     return Number((totalSleepMinutes / 60).toFixed(1));
   }
 
@@ -348,8 +380,9 @@ async getUserHealthData(userId: string, date?: string, range?: 'day' | 'week' | 
       deviceName: latestSync?.deviceName || null,
       syncSessionId: latestSync?.syncSessionId || null,
       todayDataPoints: todayData,
-      isSyncedRecently: latestSync ? 
-        (Date.now() - latestSync.fetchTime.getTime()) < 24 * 60 * 60 * 1000 : false,
+      isSyncedRecently: latestSync
+        ? Date.now() - latestSync.fetchTime.getTime() < 24 * 60 * 60 * 1000
+        : false,
     };
   }
 }

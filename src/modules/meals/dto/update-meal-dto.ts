@@ -1,4 +1,13 @@
-import { IsEnum, IsOptional, IsString, IsNumber, IsDateString, IsBoolean, Min, Max } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsDateString,
+  IsBoolean,
+  Min,
+  Max,
+} from 'class-validator';
 import { MealType } from '@prisma/client';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
