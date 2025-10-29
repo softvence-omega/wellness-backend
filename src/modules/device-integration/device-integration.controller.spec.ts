@@ -9,7 +9,9 @@ describe('DeviceIntegrationController', () => {
       controllers: [DeviceIntegrationController],
     }).compile();
 
-    controller = module.get<DeviceIntegrationController>(DeviceIntegrationController);
+    controller = module.get<DeviceIntegrationController>(
+      DeviceIntegrationController,
+    );
   });
 
   it('should be defined', () => {

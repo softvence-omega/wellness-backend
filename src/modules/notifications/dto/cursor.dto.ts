@@ -14,7 +14,7 @@ export class CursorDto {
   @IsInt()
   @Min(1, { message: 'Take must be at least 1' })
   @Max(100, { message: 'Take cannot exceed 100' })
-  take?: number ;
+  take?: number;
 
   @ApiPropertyOptional({
     description: 'Unique identifier (UUID)',

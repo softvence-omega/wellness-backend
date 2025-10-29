@@ -40,33 +40,33 @@ export class LabReportController {
   constructor(private readonly labReportService: LabReportService) {}
 
   // lab-report.controller.ts - Update your upload method
-@Post('upload')
-@UseInterceptors(FileInterceptor('reportFile'))
-async uploadLabReport(
-  @Req() req: any,
-  @UploadedFile() file: Express.Multer.File,
-) {
-  console.log('🔍 USER OBJECT:', req.user);
-  console.log('🔍 USER ID:', req.user?.id);
-  console.log('🔍 ALL REQUEST HEADERS:', req.headers);
-  
-  // Check different possible user ID fields
-  const userId = req.user?.id || req.user?.sub || req.user?.userId;
-  console.log('🔍 EXTRACTED USER ID:', userId);
-  
-  if (!userId) {
-    return {
-      success: false,
-      message: 'User authentication failed - no user ID found',
-      debug: {
-        userObject: req.user,
-        availableKeys: req.user ? Object.keys(req.user) : 'No user object'
-      }
-    };
-  }
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('reportFile'))
+  async uploadLabReport(
+    @Req() req: any,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    console.log('🔍 USER OBJECT:', req.user);
+    console.log('🔍 USER ID:', req.user?.id);
+    console.log('🔍 ALL REQUEST HEADERS:', req.headers);
 
-  return this.labReportService.uploadLabReport(userId, file);
-}
+    // Check different possible user ID fields
+    const userId = req.user?.id || req.user?.sub || req.user?.userId;
+    console.log('🔍 EXTRACTED USER ID:', userId);
+
+    if (!userId) {
+      return {
+        success: false,
+        message: 'User authentication failed - no user ID found',
+        debug: {
+          userObject: req.user,
+          availableKeys: req.user ? Object.keys(req.user) : 'No user object',
+        },
+      };
+    }
+
+    return this.labReportService.uploadLabReport(userId, file);
+  }
 
   @Get()
   @ApiOperation({ summary: 'Get all lab reports for current user' })

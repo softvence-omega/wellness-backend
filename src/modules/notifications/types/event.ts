@@ -1,5 +1,4 @@
-import { NotificationEvent } from "./notification";
-
+import { NotificationEvent } from './notification';
 
 export const EVENT_TYPES = {
   NOTIFICATION_SEND: 'NOTIFICATION_SEND',

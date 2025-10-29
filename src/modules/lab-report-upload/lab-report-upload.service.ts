@@ -9,7 +9,6 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { LabReportResponseDto } from './dto/lab-report-response.dto';
 
-
 @Injectable()
 export class LabReportService {
   constructor(
@@ -29,7 +28,7 @@ export class LabReportService {
       'application/pdf',
     ];
 
-    const maxSize = 10 * 1024 * 1024; 
+    const maxSize = 10 * 1024 * 1024;
 
     if (!allowedMimeTypes.includes(file.mimetype)) {
       throw new BadRequestException(
@@ -112,7 +111,7 @@ export class LabReportService {
       return {
         success: true,
         message: 'Lab reports retrieved successfully',
-        data: labReports.map(report => this.mapToResponse(report)),
+        data: labReports.map((report) => this.mapToResponse(report)),
       };
     } catch (error) {
       throw new InternalServerErrorException(
@@ -247,7 +246,10 @@ export class LabReportService {
         deletedCount: deleteResult.count,
       };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       throw new InternalServerErrorException(

@@ -101,7 +101,6 @@ export class CreateUserDto {
   @IsOptional()
   @IsEnum(Gender, { message: 'Gender must be one of: MALE, FEMALE, OTHER' })
   gender?: Gender | null;
-  
 
   @ApiPropertyOptional({
     description: 'User health goal',

@@ -1,4 +1,11 @@
-import { Injectable, UnauthorizedException, BadRequestException, NotFoundException, Logger, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+  NotFoundException,
+  Logger,
+  ForbiddenException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -42,7 +49,9 @@ export class AuthService {
     private configService: ConfigService,
   ) {
     this.validateEnvVars();
-    this.googleClient = new OAuth2Client(this.configService.get<string>('GOOGLE_CLIENT_ID'));
+    this.googleClient = new OAuth2Client(
+      this.configService.get<string>('GOOGLE_CLIENT_ID'),
+    );
   }
 
   private validateEnvVars() {
@@ -114,7 +123,6 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
-    
 
     const user = await this.prisma.$transaction(async (prisma) => {
       return prisma.user.create({
@@ -145,8 +153,6 @@ export class AuthService {
           updatedAt: true,
         },
       });
-
- 
     });
     const tokens = await this.generateTokens(user.id, user.email, user.role);
     await this.saveRefreshToken(user.id, tokens.refreshToken);
@@ -154,11 +160,16 @@ export class AuthService {
     return { message: 'User registered successfully', user, tokens };
   }
 
-   async registerAdmin(dto: CreateUserDto, secretKey: string): Promise<{ message: string; user: any }> {
+  async registerAdmin(
+    dto: CreateUserDto,
+    secretKey: string,
+  ): Promise<{ message: string; user: any }> {
     this.logger.log(`Admin registration attempt for email: ${dto.email}`);
 
     // Verify secret key from environment
-    const adminSecret = this.configService.get<string>('ADMIN_REGISTRATION_SECRET');
+    const adminSecret = this.configService.get<string>(
+      'ADMIN_REGISTRATION_SECRET',
+    );
     if (!adminSecret || secretKey !== adminSecret) {
       throw new BadRequestException('Invalid admin registration secret');
     }
@@ -203,8 +214,13 @@ export class AuthService {
   }
 
   // Admin: Create user with specific role (only ADMIN can do this)
-  async createUserWithRole(dto: CreateUserDto & { role: Role }, adminUserId: string): Promise<{ message: string; user: any }> {
-    this.logger.log(`Admin ${adminUserId} creating user with role: ${dto.role}`);
+  async createUserWithRole(
+    dto: CreateUserDto & { role: Role },
+    adminUserId: string,
+  ): Promise<{ message: string; user: any }> {
+    this.logger.log(
+      `Admin ${adminUserId} creating user with role: ${dto.role}`,
+    );
 
     // Verify admin permissions
     const admin = await this.prisma.user.findUnique({
@@ -213,7 +229,9 @@ export class AuthService {
     });
 
     if (!admin || admin.role !== Role.ADMIN) {
-      throw new ForbiddenException('Only administrators can create users with specific roles');
+      throw new ForbiddenException(
+        'Only administrators can create users with specific roles',
+      );
     }
 
     const existingUser = await this.prisma.user.findUnique({
@@ -256,8 +274,14 @@ export class AuthService {
   }
 
   // Admin: Update user role
-  async updateUserRole(adminUserId: string, userId: string, newRole: Role): Promise<{ message: string; user: any }> {
-    this.logger.log(`Admin ${adminUserId} updating user ${userId} role to ${newRole}`);
+  async updateUserRole(
+    adminUserId: string,
+    userId: string,
+    newRole: Role,
+  ): Promise<{ message: string; user: any }> {
+    this.logger.log(
+      `Admin ${adminUserId} updating user ${userId} role to ${newRole}`,
+    );
 
     // Verify admin permissions
     const admin = await this.prisma.user.findUnique({
@@ -325,7 +349,37 @@ export class AuthService {
     return { isAdmin: user.role === Role.ADMIN };
   }
 
-  async googleMobileLogin(idToken: string): Promise<{ message: string; tokens: { accessToken: string; refreshToken: string }; userId: string }> {
+  async getUserInfo(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId, isDeleted: false },
+      include: {
+        profile: true,
+        emotionEntries: true,
+        notifications: true,
+        deviceIntegration: true,
+        nudges: true,
+        HealthDatas: true,
+        MedicalReports: true,
+        meals: true,
+        labReports: true,
+        tips: true,
+        chats: true,
+        conversations: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
+  }
+
+  async googleMobileLogin(idToken: string): Promise<{
+    message: string;
+    tokens: { accessToken: string; refreshToken: string };
+    userId: string;
+  }> {
     this.logger.log(`Google login attempt with idToken`);
 
     try {
@@ -459,7 +513,12 @@ export class AuthService {
       where: { email, isDeleted: false },
       select: { otp: true, otpExpiry: true },
     });
-    if (!user || user.otp !== otp || !user.otpExpiry || user.otpExpiry < new Date()) {
+    if (
+      !user ||
+      user.otp !== otp ||
+      !user.otpExpiry ||
+      user.otpExpiry < new Date()
+    ) {
       throw new BadRequestException('Invalid or expired OTP');
     }
 
@@ -470,14 +529,21 @@ export class AuthService {
     this.logger.log(`Password reset attempt for email: ${email}`);
 
     if (!email || !otp || !newPassword) {
-      throw new BadRequestException('Email, OTP, and new password are required');
+      throw new BadRequestException(
+        'Email, OTP, and new password are required',
+      );
     }
 
     const user = await this.prisma.user.findUnique({
       where: { email, isDeleted: false },
       select: { id: true, otp: true, otpExpiry: true },
     });
-    if (!user || user.otp !== otp || !user.otpExpiry || user.otpExpiry < new Date()) {
+    if (
+      !user ||
+      user.otp !== otp ||
+      !user.otpExpiry ||
+      user.otpExpiry < new Date()
+    ) {
       throw new BadRequestException('Invalid or expired OTP');
     }
 
@@ -496,6 +562,48 @@ export class AuthService {
     return { message: 'Password reset successfully' };
   }
 
+  async changePassword(userId: string, oldPassword, newPassword) {
+    this.logger.log(`Password change attempt for userId: ${userId}`);
+
+    if (!userId || !oldPassword || !newPassword) {
+      throw new BadRequestException(
+        'User ID, old password and new password are required',
+      );
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId, isDeleted: false },
+      select: { id: true, password: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (!user.password) {
+      throw new BadRequestException(
+        'This account uses social login and does not have a password.',
+      );
+    }
+
+    const isPasswordMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isPasswordMatch) {
+      throw new UnauthorizedException('Invalid old password');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        password: hashedPassword,
+        changePasswordAt: new Date(),
+      },
+    });
+
+    return { message: 'Password changed successfully' };
+  }
+
   async appleMobileLogin(code: string) {
     this.logger.log('Apple mobile login attempt');
 
@@ -512,13 +620,19 @@ export class AuthService {
         client_secret: clientSecret,
       });
 
-      const resp = await axios.post('https://appleid.apple.com/auth/token', params.toString(), {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      });
+      const resp = await axios.post(
+        'https://appleid.apple.com/auth/token',
+        params.toString(),
+        {
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        },
+      );
 
       const { id_token } = resp.data;
       if (!id_token) {
-        throw new UnauthorizedException('Apple login failed: No ID token received');
+        throw new UnauthorizedException(
+          'Apple login failed: No ID token received',
+        );
       }
 
       const appleUser = await this.verifyAppleIdToken(id_token);
@@ -569,7 +683,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
 
-    const refreshMatches = await bcrypt.compare(refreshToken, user.refreshToken);
+    const refreshMatches = await bcrypt.compare(
+      refreshToken,
+      user.refreshToken,
+    );
     if (!refreshMatches) {
       throw new UnauthorizedException('Invalid refresh token');
     }
@@ -577,10 +694,18 @@ export class AuthService {
     const tokens = await this.generateTokens(user.id, user.email, user.role);
     await this.saveRefreshToken(user.id, tokens.refreshToken);
 
-    return { message: 'Tokens refreshed successfully', tokens, userId: user.id };
+    return {
+      message: 'Tokens refreshed successfully',
+      tokens,
+      userId: user.id,
+    };
   }
 
-  private async createUser(data: { email: string; fullName: string; isSocialLogin: boolean }) {
+  private async createUser(data: {
+    email: string;
+    fullName: string;
+    isSocialLogin: boolean;
+  }) {
     return this.prisma.$transaction(async (prisma) => {
       return prisma.user.create({
         data: {
@@ -605,10 +730,6 @@ export class AuthService {
     });
   }
 
-
-
-  
-
   private async generateAppleClientSecret() {
     try {
       const privateKey = this.configService.get<string>('APPLE_PRIVATE_KEY')!;
@@ -628,20 +749,28 @@ export class AuthService {
         },
       });
     } catch (error) {
-      this.logger.error(`Failed to generate Apple client secret: ${error.message}`);
-      throw new Error(`Failed to generate Apple client secret: ${error.message}`);
+      this.logger.error(
+        `Failed to generate Apple client secret: ${error.message}`,
+      );
+      throw new Error(
+        `Failed to generate Apple client secret: ${error.message}`,
+      );
     }
   }
 
   private async verifyAppleIdToken(idToken: string): Promise<AppleUser> {
     try {
-      const decodedHeader: any = jwt.decode(idToken, { complete: true })?.header;
+      const decodedHeader: any = jwt.decode(idToken, {
+        complete: true,
+      })?.header;
       if (!decodedHeader || !decodedHeader.kid) {
         throw new Error('Invalid id_token: Missing header or kid');
       }
 
       const jwksResp = await axios.get('https://appleid.apple.com/auth/keys');
-      const jwk = jwksResp.data.keys.find((k: any) => k.kid === decodedHeader.kid);
+      const jwk = jwksResp.data.keys.find(
+        (k: any) => k.kid === decodedHeader.kid,
+      );
       if (!jwk) {
         throw new Error('Invalid Apple public key');
       }
@@ -661,7 +790,9 @@ export class AuthService {
       };
     } catch (error) {
       this.logger.error(`Apple ID token verification failed: ${error.message}`);
-      throw new UnauthorizedException(`Apple ID token verification failed: ${error.message}`);
+      throw new UnauthorizedException(
+        `Apple ID token verification failed: ${error.message}`,
+      );
     }
   }
 

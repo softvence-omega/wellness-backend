@@ -1,30 +1,30 @@
 export enum NudgeCategory {
   WATER = 'HYDRATION',
-  NUTRITION = 'WEIGHT', 
+  NUTRITION = 'WEIGHT',
   ACTIVITY = 'MOVEMENT',
   SLEEP = 'SLEEP',
-  MINDFULNESS = 'OTHER'
+  MINDFULNESS = 'OTHER',
 }
 
 export enum NudgeUnit {
   ML = 'ML',
   G = 'KG',
   MIN = 'MINUTES',
-  HRS = 'HOURS', 
+  HRS = 'HOURS',
   KCAL = 'CALORIES',
-  STEPS = 'STEPS'
+  STEPS = 'STEPS',
 }
 
 export enum TipType {
   SUCCESS = 'SUCCESS',
-  WARNING = 'WARNING', 
+  WARNING = 'WARNING',
   INFO = 'INFO',
-  MOTIVATION = 'MOTIVATION'
+  MOTIVATION = 'MOTIVATION',
 }
 
 export enum RiskLevel {
   LOW = 'LOW',
   MEDIUM = 'MEDIUM',
   HIGH = 'HIGH',
-  CRITICAL = 'CRITICAL'
+  CRITICAL = 'CRITICAL',
 }

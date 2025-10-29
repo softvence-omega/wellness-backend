@@ -1,13 +1,16 @@
 // src/notification/dto/send-notification.dto.ts
-import { IsNotEmpty, IsString, IsOptional, IsObject, IsUUID } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsOptional,
+  IsObject,
+  IsUUID,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-
-export class SendNotificationDto  {
-
+export class SendNotificationDto {
   @IsUUID('4', { message: 'ID must be a valid UUID (version 4).' })
   id: string;
-
 
   @ApiProperty({
     description: 'FCM token of the recipient device',
@@ -33,8 +36,7 @@ export class SendNotificationDto  {
   @IsNotEmpty()
   body: string;
 
-
-    @IsOptional()
+  @IsOptional()
   @IsUUID('4', { message: 'please provided evend id if needed' })
   eventid?: string;
 

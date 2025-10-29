@@ -16,7 +16,7 @@ export class CloudinaryService {
 
   async uploadImage(file: Express.Multer.File): Promise<string> {
     const context = 'CloudinaryService.uploadImage';
-    
+
     try {
       // Validate file type
       if (!file.mimetype.startsWith('image/')) {
@@ -42,15 +42,15 @@ export class CloudinaryService {
             transformation: [
               { width: 800, height: 600, crop: 'limit' },
               { quality: 'auto' },
-              { format: 'webp' } // Convert to webp for better performance
-            ]
+              { format: 'webp' }, // Convert to webp for better performance
+            ],
           },
           (error, result) => {
             if (error) reject(error);
             else resolve(result);
-          }
+          },
         );
-        
+
         uploadStream.end(file.buffer);
       });
 
@@ -65,7 +65,7 @@ export class CloudinaryService {
         error: error.message,
         filename: file.originalname,
       });
-      
+
       if (error instanceof BadRequestException) throw error;
       throw new BadRequestException('Failed to upload image');
     }
@@ -73,7 +73,7 @@ export class CloudinaryService {
 
   async uploadPDF(file: Express.Multer.File): Promise<string> {
     const context = 'CloudinaryService.uploadPDF';
-    
+
     try {
       // Validate file type
       if (file.mimetype !== 'application/pdf') {
@@ -99,9 +99,9 @@ export class CloudinaryService {
           (error, result) => {
             if (error) reject(error);
             else resolve(result);
-          }
+          },
         );
-        
+
         uploadStream.end(file.buffer);
       });
 
@@ -116,7 +116,7 @@ export class CloudinaryService {
         error: error.message,
         filename: file.originalname,
       });
-      
+
       if (error instanceof BadRequestException) throw error;
       throw new BadRequestException('Failed to upload PDF');
     }
@@ -124,12 +124,12 @@ export class CloudinaryService {
 
   async deleteFile(publicId: string): Promise<void> {
     const context = 'CloudinaryService.deleteFile';
-    
+
     try {
       this.logger.debug('Deleting file from Cloudinary', context, { publicId });
 
       const result = await cloudinary.uploader.destroy(publicId);
-      
+
       if (result.result !== 'ok') {
         throw new Error(`Failed to delete file: ${result.result}`);
       }
@@ -145,7 +145,9 @@ export class CloudinaryService {
   }
 
   extractPublicId(url: string): string | null {
-    const matches = url.match(/\/upload\/(?:v\d+\/)?(.+)\.(?:jpg|png|webp|pdf|jpeg)/);
+    const matches = url.match(
+      /\/upload\/(?:v\d+\/)?(.+)\.(?:jpg|png|webp|pdf|jpeg)/,
+    );
     return matches ? matches[1] : null;
   }
   extractPublicIdOrThrow(url: string): string {

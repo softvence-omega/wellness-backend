@@ -23,7 +23,11 @@ export class GoogleService {
       if (!payload || !payload.email) {
         throw new UnauthorizedException('Invalid Google ID token');
       }
-      return { email: payload.email, name: payload.name, picture: payload.picture };
+      return {
+        email: payload.email,
+        name: payload.name,
+        picture: payload.picture,
+      };
     } catch (err) {
       throw new UnauthorizedException('Failed to verify Google ID token');
     }

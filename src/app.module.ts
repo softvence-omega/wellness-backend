@@ -5,7 +5,7 @@ import { DeviceIntegrationModule } from './modules/device-integration/device-int
 import { ProfileModule } from './modules/profile/profile.module';
 
 import { TipsModule } from './modules/tips/tips.module';
-// import { UsersModule } from './modules/users/users.module';
+import { UsersModule } from './modules/users/users.module';
 import { VitalsModule } from './modules/vitals/vitals.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { GoogleService } from './modules/google/google.service';
@@ -32,6 +32,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
       limit: 100,
     } as any),
     AuthModule,
+    UsersModule,
     DeviceIntegrationModule,
     ProfileModule,
     MealsModule,

@@ -17,19 +17,27 @@ import {
 import { AuthService } from './auth.service';
 import { successResponse } from 'src/common/response';
 import { CreateUserDto } from './dto/create-user.dto';
-import { AppleMobileLoginDto, ForgotPasswordDto, GoogleMobileLoginDto, LoginUserDto, RefreshTokenDto, ResetPasswordDto, VerifyOtpDto } from './dto/login-user.dto';
+import {
+  AppleMobileLoginDto,
+  ForgotPasswordDto,
+  GoogleMobileLoginDto,
+  LoginUserDto,
+  RefreshTokenDto,
+  ResetPasswordDto,
+  VerifyOtpDto,
+} from './dto/login-user.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/role-auth.guard';
 import { Roles } from './decorators/roles.decorator';
 import { Role } from '@prisma/client';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { UserRequest } from 'src/common/type/users.types';
 
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
 
-  constructor(
-    private readonly authService: AuthService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   private handleError(error: any, context: string): never {
     this.logger.error(`Error in ${context}: ${error.message}`, {
@@ -46,11 +54,16 @@ export class AuthController {
       throw new BadRequestException('User already exists with this email');
     }
 
-    if (error.name === 'TokenExpiredError' || error.name === 'JsonWebTokenError') {
+    if (
+      error.name === 'TokenExpiredError' ||
+      error.name === 'JsonWebTokenError'
+    ) {
       throw new UnauthorizedException('Invalid or expired token');
     }
 
-    throw new InternalServerErrorException(`An error occurred during ${context}`);
+    throw new InternalServerErrorException(
+      `An error occurred during ${context}`,
+    );
   }
 
   @Post('register')
@@ -105,7 +118,11 @@ export class AuthController {
   async resetPassword(@Body() dto: ResetPasswordDto) {
     try {
       this.logger.log(`Password reset attempt for email: ${dto.email}`);
-      const result = await this.authService.resetPasswordWithOtp(dto.email, dto.otp, dto.newPassword);
+      const result = await this.authService.resetPasswordWithOtp(
+        dto.email,
+        dto.otp,
+        dto.newPassword,
+      );
       return successResponse(result, 'Password reset successfully');
     } catch (error) {
       error.input = { email: dto.email, otp: dto.otp };
@@ -113,8 +130,25 @@ export class AuthController {
     }
   }
 
-    @Post('register-admin')
-    async registerAdmin(@Body() dto: CreateUserDto & { secretKey: string }) {
+  @UseGuards(JwtAuthGuard)
+  @Post('change-password')
+  async changePassword(@Req() req: any, @Body() dto: ChangePasswordDto) {
+    try {
+      this.logger.log(`Password change attempt for userId: ${req.user.userId}`);
+      const result = await this.authService.changePassword(
+        req.user.userId,
+        dto.oldPassword,
+        dto.newPassword,
+      );
+      return successResponse(result, 'Password changed successfully');
+    } catch (error) {
+      error.input = { userId: req.user.userId };
+      this.handleError(error, 'change-password');
+    }
+  }
+
+  @Post('register-admin')
+  async registerAdmin(@Body() dto: CreateUserDto & { secretKey: string }) {
     return this.authService.registerAdmin(dto, dto.secretKey);
   }
   @UseGuards(JwtAuthGuard)
@@ -129,18 +163,31 @@ export class AuthController {
     return this.authService.isUserAdmin(req.user.userId);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  async getMyInfo(@Req() req: any) {
+    return this.authService.getUserInfo(req.user.userId);
+  }
+
   // Admin-only endpoints
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @Post('users/with-role')
-  async createUserWithRole(@Req() req: any, @Body() dto: CreateUserDto & { role: Role }) {
+  async createUserWithRole(
+    @Req() req: any,
+    @Body() dto: CreateUserDto & { role: Role },
+  ) {
     return this.authService.createUserWithRole(dto, req.user.userId);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @Put('users/:userId/role')
-  async updateUserRole(@Req() req: any, @Param('userId') userId: string, @Body('role') role: Role) {
+  async updateUserRole(
+    @Req() req: any,
+    @Param('userId') userId: string,
+    @Body('role') role: Role,
+  ) {
     return this.authService.updateUserRole(req.user.userId, userId, role);
   }
 
@@ -173,7 +220,10 @@ export class AuthController {
   async refreshToken(@Body() dto: RefreshTokenDto) {
     try {
       this.logger.log(`Token refresh attempt for userId: ${dto.userId}`);
-      const result = await this.authService.refreshTokens(dto.userId, dto.refreshToken);
+      const result = await this.authService.refreshTokens(
+        dto.userId,
+        dto.refreshToken,
+      );
       return successResponse(result, 'Access token refreshed successfully');
     } catch (error) {
       error.input = { userId: dto.userId };

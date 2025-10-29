@@ -9,13 +9,16 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreateHealthDataDto } from './dto/create-health-data.dto';
-import { BatchSyncResponse, HealthDataResponse, HealthDataService, SyncStatusResponse } from './watch-data.service';
-
-
+import {
+  BatchSyncResponse,
+  HealthDataResponse,
+  HealthDataService,
+  SyncStatusResponse,
+} from './watch-data.service';
 
 @Controller('health-data')
 export class HealthDataController {
-    [x: string]: any;
+  [x: string]: any;
   constructor(private readonly healthDataService: HealthDataService) {}
 
   @Post('sync')
@@ -24,11 +27,11 @@ export class HealthDataController {
   }
 
   @Post('batch-sync')
-  async batchSyncHealthData(@Body() healthDataArray: CreateHealthDataDto[]): Promise<BatchSyncResponse> {
+  async batchSyncHealthData(
+    @Body() healthDataArray: CreateHealthDataDto[],
+  ): Promise<BatchSyncResponse> {
     return this.healthDataService.batchSyncAppleWatchData(healthDataArray);
   }
-
-  
 
   @Get('user/:userId')
   async getUserHealthData(
@@ -40,7 +43,7 @@ export class HealthDataController {
   }
 
   // Add this to your controller temporarily
-@Get('user/:userId/debug')
+  @Get('user/:userId/debug')
   async debugUserHealthData(@Param('userId') userId: string) {
     const allData = await this.healthDataService['prisma'].healthData.findMany({
       where: { userId },
@@ -57,7 +60,7 @@ export class HealthDataController {
 
     return {
       totalRecords: allData.length,
-      data: allData.map(item => ({
+      data: allData.map((item) => ({
         id: item.id,
         startTime: item.startTime,
         endTime: item.endTime,
@@ -76,7 +79,9 @@ export class HealthDataController {
     };
   }
   @Get('user/:userId/today')
-  async getTodayHealthData(@Param('userId') userId: string): Promise<HealthDataResponse> {
+  async getTodayHealthData(
+    @Param('userId') userId: string,
+  ): Promise<HealthDataResponse> {
     const today = new Date().toISOString().split('T')[0];
     return this.healthDataService.getUserHealthData(userId, today, 'day');
   }
@@ -91,12 +96,16 @@ export class HealthDataController {
   }
 
   @Get('user/:userId/sync-status')
-  async getSyncStatus(@Param('userId') userId: string): Promise<SyncStatusResponse> {
+  async getSyncStatus(
+    @Param('userId') userId: string,
+  ): Promise<SyncStatusResponse> {
     return this.healthDataService.getSyncStatus(userId);
   }
 
   @Get('user/:userId/summary')
-  async getHealthSummary(@Param('userId') userId: string): Promise<HealthDataResponse> {
+  async getHealthSummary(
+    @Param('userId') userId: string,
+  ): Promise<HealthDataResponse> {
     const today = new Date().toISOString().split('T')[0];
     return this.healthDataService.getUserHealthData(userId, today, 'day');
   }

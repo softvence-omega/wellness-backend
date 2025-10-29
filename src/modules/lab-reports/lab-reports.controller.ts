@@ -14,26 +14,32 @@ import {
   ParseUUIDPipe,
   BadRequestException,
 } from '@nestjs/common';
-import { 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
-  ApiBearerAuth, 
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
   ApiQuery,
-  ApiParam 
+  ApiParam,
 } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
- // Fixed import path
+// Fixed import path
 
 import { CreateMedicalReportDto } from './dto/create-medical-report.dto';
 import { UpdateMedicalReportDto } from './dto/update-medical-report.dto';
 
-import { IMedicalReportFilters, LabValue } from './interfaces/medical-report.interface';
+import {
+  IMedicalReportFilters,
+  LabValue,
+} from './interfaces/medical-report.interface';
 import { MedicalReportsService } from './lab-reports.service';
 import { GetUser } from 'src/common/decorator/get-user.decorator';
-import { MedicalReportResponseDto, PaginatedMedicalReportsResponseDto } from './dto/medical-report-response.dto';
- // Fixed import name
+import {
+  MedicalReportResponseDto,
+  PaginatedMedicalReportsResponseDto,
+} from './dto/medical-report-response.dto';
+// Fixed import name
 
 @ApiTags('medical-reports')
 @ApiBearerAuth()
@@ -44,8 +50,8 @@ export class MedicalReportsController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new medical report' })
-  @ApiResponse({ 
-    status: HttpStatus.CREATED, 
+  @ApiResponse({
+    status: HttpStatus.CREATED,
     description: 'Medical report created successfully',
     type: MedicalReportResponseDto,
   })
@@ -54,29 +60,51 @@ export class MedicalReportsController {
     @GetUser() user: any, // Get full user object first for debugging
   ): Promise<MedicalReportResponseDto> {
     console.log('Full user object from GetUser:', user); // Debug log
-    
+
     // Extract userId from user object
     const userId = user?.id || user?.sub || user?.userId;
     console.log('Extracted userId:', userId); // Debug log
-    
+
     if (!userId) {
       throw new BadRequestException('User ID not found in token');
     }
 
-    const report = await this.medicalReportsService.create(createMedicalReportDto, userId);
+    const report = await this.medicalReportsService.create(
+      createMedicalReportDto,
+      userId,
+    );
     return this.toResponseDto(report);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all medical reports for the authenticated user' })
+  @ApiOperation({
+    summary: 'Get all medical reports for the authenticated user',
+  })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'reportType', required: false, enum: ['CBC', 'LFT', 'KFT', 'THYROID', 'MRI', 'CT_SCAN', 'X_RAY', 'ULTRASOUND', 'ECG', 'BLOOD_TEST', 'URINE_TEST', 'OTHER'] })
+  @ApiQuery({
+    name: 'reportType',
+    required: false,
+    enum: [
+      'CBC',
+      'LFT',
+      'KFT',
+      'THYROID',
+      'MRI',
+      'CT_SCAN',
+      'X_RAY',
+      'ULTRASOUND',
+      'ECG',
+      'BLOOD_TEST',
+      'URINE_TEST',
+      'OTHER',
+    ],
+  })
   @ApiQuery({ name: 'startDate', required: false, type: Date })
   @ApiQuery({ name: 'endDate', required: false, type: Date })
   @ApiQuery({ name: 'search', required: false, type: String })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
+  @ApiResponse({
+    status: HttpStatus.OK,
     description: 'Returns paginated medical reports',
     type: PaginatedMedicalReportsResponseDto,
   })
@@ -100,24 +128,24 @@ export class MedicalReportsController {
     };
 
     const result = await this.medicalReportsService.findAll(filters);
-    
+
     return {
-      reports: result.reports.map(report => this.toResponseDto(report)),
+      reports: result.reports.map((report) => this.toResponseDto(report)),
       pagination: result.pagination,
     };
   }
 
- @Get(':id')
+  @Get(':id')
   @ApiOperation({ summary: 'Get a specific medical report by ID' })
   @ApiParam({ name: 'id', description: 'Medical report ID (CUID format)' })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
+  @ApiResponse({
+    status: HttpStatus.OK,
     description: 'Returns the medical report',
     type: MedicalReportResponseDto,
   })
-  @ApiResponse({ 
-    status: HttpStatus.NOT_FOUND, 
-    description: 'Medical report not found' 
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Medical report not found',
   })
   async findOne(
     @Param('id') id: string, // Remove ParseUUIDPipe for CUID
@@ -135,8 +163,8 @@ export class MedicalReportsController {
   @Get(':id/abnormal-values')
   @ApiOperation({ summary: 'Get abnormal lab values from a medical report' })
   @ApiParam({ name: 'id', description: 'Medical report ID (CUID format)' })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
+  @ApiResponse({
+    status: HttpStatus.OK,
     description: 'Returns abnormal lab values',
   })
   async getAbnormalValues(
@@ -153,18 +181,18 @@ export class MedicalReportsController {
   @Put(':id')
   @ApiOperation({ summary: 'Update a medical report' })
   @ApiParam({ name: 'id', description: 'Medical report ID (CUID format)' })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
+  @ApiResponse({
+    status: HttpStatus.OK,
     description: 'Medical report updated successfully',
     type: MedicalReportResponseDto,
   })
-  @ApiResponse({ 
-    status: HttpStatus.NOT_FOUND, 
-    description: 'Medical report not found' 
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Medical report not found',
   })
-  @ApiResponse({ 
-    status: HttpStatus.CONFLICT, 
-    description: 'Report with this file name already exists' 
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'Report with this file name already exists',
   })
   async update(
     @Param('id') id: string, // Remove ParseUUIDPipe
@@ -175,7 +203,11 @@ export class MedicalReportsController {
       throw new BadRequestException('Invalid medical report ID format');
     }
 
-    const report = await this.medicalReportsService.update(id, userId, updateMedicalReportDto);
+    const report = await this.medicalReportsService.update(
+      id,
+      userId,
+      updateMedicalReportDto,
+    );
     return this.toResponseDto(report);
   }
 
@@ -183,13 +215,13 @@ export class MedicalReportsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a medical report' })
   @ApiParam({ name: 'id', description: 'Medical report ID (CUID format)' })
-  @ApiResponse({ 
-    status: HttpStatus.NO_CONTENT, 
-    description: 'Medical report deleted successfully' 
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'Medical report deleted successfully',
   })
-  @ApiResponse({ 
-    status: HttpStatus.NOT_FOUND, 
-    description: 'Medical report not found' 
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Medical report not found',
   })
   async remove(
     @Param('id') id: string, // Remove ParseUUIDPipe
@@ -203,9 +235,10 @@ export class MedicalReportsController {
   }
   private toResponseDto(report: any): MedicalReportResponseDto {
     // Parse reportData if it's a string, otherwise use as-is
-    const reportData = typeof report.reportData === 'string' 
-      ? JSON.parse(report.reportData) 
-      : report.reportData;
+    const reportData =
+      typeof report.reportData === 'string'
+        ? JSON.parse(report.reportData)
+        : report.reportData;
 
     return {
       id: report.id,

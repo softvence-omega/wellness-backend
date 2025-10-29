@@ -30,17 +30,28 @@ import { GoogleService } from '../google/google.service';
           }
         }
         // Validate JWT duration formats
-        const validateJwtDuration = (value: string, name: string): string | number => {
+        const validateJwtDuration = (
+          value: string,
+          name: string,
+        ): string | number => {
           if (/^\d+$/.test(value)) {
             return parseInt(value, 10); // Convert to number for seconds
           }
           if (/^\d+[smhdwMy]$/.test(value)) {
             return value; // Valid JWT duration string (e.g., '1h', '30d')
           }
-          throw new Error(`Invalid ${name}: must be a number or valid JWT duration (e.g., '3600', '1h', '30d')`);
+          throw new Error(
+            `Invalid ${name}: must be a number or valid JWT duration (e.g., '3600', '1h', '30d')`,
+          );
         };
-        validateJwtDuration(config.ACCESS_TOKEN_EXPIREIN, 'ACCESS_TOKEN_EXPIREIN');
-        validateJwtDuration(config.REFRESH_TOKEN_EXPIREIN, 'REFRESH_TOKEN_EXPIREIN');
+        validateJwtDuration(
+          config.ACCESS_TOKEN_EXPIREIN,
+          'ACCESS_TOKEN_EXPIREIN',
+        );
+        validateJwtDuration(
+          config.REFRESH_TOKEN_EXPIREIN,
+          'REFRESH_TOKEN_EXPIREIN',
+        );
         return config;
       },
     }),
@@ -51,7 +62,9 @@ import { GoogleService } from '../google/google.service';
       global: true, // Make JwtModule global to share JwtService
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
-        const jwtSecret = configService.get<string>('JWT_SECRET', { infer: true });
+        const jwtSecret = configService.get<string>('JWT_SECRET', {
+          infer: true,
+        });
         if (!jwtSecret) {
           throw new Error('JWT_SECRET is not defined');
         }
