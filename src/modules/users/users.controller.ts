@@ -21,6 +21,7 @@ import { RolesGuard } from '../auth/guards/role-auth.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Request } from 'express';
+import { UpdateNotificationSettingsDto } from './dto/notification-settings.dto';
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -34,7 +35,6 @@ interface AuthenticatedRequest extends Request {
 export class UsersController {
   constructor(private readonly userService: UsersService) {}
 
-  // ✅ Update profile
   @Roles('ADMIN', 'USER')
   @Put('profile')
   async userProfileUpdate(
@@ -50,7 +50,7 @@ export class UsersController {
 
   @Roles('ADMIN', 'USER')
   @Put('profile-photo')
-  @UseInterceptors(FileInterceptor('file')) // <-- single file upload
+  @UseInterceptors(FileInterceptor('file'))
   async uploadFile(
     @UploadedFile() file: Express.Multer.File,
     @Req() req: AuthenticatedRequest,
@@ -69,7 +69,6 @@ export class UsersController {
     return successResponse(data, 'Profile photo updated successfully');
   }
 
-  // ✅ List users (ADMIN only)
   @Get('user-list')
   @Roles('ADMIN')
   async findAll(@Query() query: Record<string, any>) {
@@ -86,7 +85,6 @@ export class UsersController {
     return successResponse(data, 'Users fetched');
   }
 
-  // ✅ Get own profile
   @Get('me')
   @Roles('ADMIN', 'USER')
   async findOne(@Req() req: AuthenticatedRequest) {
@@ -98,7 +96,6 @@ export class UsersController {
     return successResponse(data, 'User fetched');
   }
 
-  // ✅ Soft delete (self or admin)
   @Delete('users/:id')
   @Roles('ADMIN', 'USER')
   async remove(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
@@ -111,4 +108,26 @@ export class UsersController {
     const data = await this.userService.remove(id);
     return successResponse(data, 'User deleted');
   }
+
+
+
+   @Put()
+    async updateNotificationSettings(
+      @Req() req: AuthenticatedRequest,
+      @Body() dto: UpdateNotificationSettingsDto,
+    ) {
+      if (!req.user) {
+        throw new UnauthorizedException();
+      }
+      const settings = await this.userService.updateNotificationSettings(
+        req.user.userId,
+        dto,
+      );
+      return successResponse(
+        settings,
+        'Notification settings updated successfully.',
+      );
+    }
+
+  
 }

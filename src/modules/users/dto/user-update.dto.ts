@@ -46,10 +46,6 @@ export class UpdateProfileDto {
   healthGoal?: HealthGoal;
 
   @IsOptional()
-  @IsString()
-  photo?: string;
-
-  @IsOptional()
   @IsBoolean()
   isEnableNotification?: boolean;
 

@@ -5,8 +5,10 @@ import {
   IsOptional,
   IsObject,
   IsUUID,
+  IsEnum,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { NotificationCategory } from 'src/common/enums/notification-category.enum';
 
 export class SendNotificationDto {
   @IsUUID('4', { message: 'ID must be a valid UUID (version 4).' })
@@ -35,6 +37,13 @@ export class SendNotificationDto {
   @IsString()
   @IsNotEmpty()
   body: string;
+
+  @ApiProperty({
+    description: 'Notification category',
+    enum: NotificationCategory,
+  })
+  @IsEnum(NotificationCategory)
+  category: NotificationCategory;
 
   @IsOptional()
   @IsUUID('4', { message: 'please provided evend id if needed' })

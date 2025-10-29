@@ -163,12 +163,6 @@ export class AuthController {
     return this.authService.isUserAdmin(req.user.userId);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Get('me')
-  async getMyInfo(@Req() req: any) {
-    return this.authService.getUserInfo(req.user.userId);
-  }
-
   // Admin-only endpoints
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)

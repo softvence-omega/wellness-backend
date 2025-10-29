@@ -125,7 +125,7 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
     const user = await this.prisma.$transaction(async (prisma) => {
-      return prisma.user.create({
+       prisma.user.create({
         data: {
           email: dto.email,
           password: hashedPassword,
@@ -153,6 +153,13 @@ export class AuthService {
           updatedAt: true,
         },
       });
+      
+      await prisma.notificationSettings.create({
+    data: {
+      userId: user.id,
+    },
+  });
+      return user;
     });
     const tokens = await this.generateTokens(user.id, user.email, user.role);
     await this.saveRefreshToken(user.id, tokens.refreshToken);

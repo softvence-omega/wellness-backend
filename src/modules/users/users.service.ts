@@ -8,6 +8,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { UpdateProfileDto } from './dto/user-update.dto';
 import { Prisma } from '@prisma/client';
 import { CloudinaryService } from 'src/common/cloudinary/cloudinary.service';
+import { UpdateNotificationSettingsDto } from './dto/notification-settings.dto';
 
 @Injectable()
 export class UsersService {
@@ -16,7 +17,33 @@ export class UsersService {
     private readonly cloudinary: CloudinaryService,
   ) {}
 
-  // ✅ Update profile
+  
+
+  async updateNotificationSettings(
+    userId: string,
+    dto: UpdateNotificationSettingsDto,
+  ) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { notificationSettings: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const settings = await this.prisma.notificationSettings.upsert({
+      where: { userId },
+      update: dto,
+      create: {
+        userId,
+        ...dto,
+      },
+    });
+
+    return settings;
+  }
+
   async profileUpdate(dto: UpdateProfileDto, userId: string) {
     const isUserExist = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -35,7 +62,6 @@ export class UsersService {
         height: dto.height ? parseFloat(dto.height) : undefined,
         weight: dto.weight ? parseFloat(dto.weight) : undefined,
         healthGoal: dto.healthGoal,
-        photo: dto.photo,
         language: dto.language,
         isEnableNotification: dto.isEnableNotification,
       },
@@ -47,7 +73,6 @@ export class UsersService {
   async uploadFile(file: Express.Multer.File, userId: string) {
     let fileUrl = '';
 
-    //  Upload image to Cloudinary
     if (file) {
       const uploadResult = await this.cloudinary.uploadBuffer(
         file.buffer,
@@ -57,7 +82,6 @@ export class UsersService {
       fileUrl = uploadResult.secure_url;
     }
 
-    // ✅ Check if user exists
     const isUserExist = await this.prisma.user.findUnique({
       where: { id: userId },
     });
@@ -65,7 +89,6 @@ export class UsersService {
     if (isUserExist.isDeleted)
       throw new NotFoundException('User already deleted!');
 
-    // ✅ Update profile photo
     const updatedProfile = await this.prisma.profile.update({
       where: { userId },
       data: { photo: fileUrl },
@@ -74,7 +97,6 @@ export class UsersService {
     return updatedProfile;
   }
 
-  // ✅ List all users
   async findAll(
     page = 1,
     limit = 10,
@@ -139,12 +161,11 @@ export class UsersService {
     }
   }
 
-  // ✅ Get single user
   async findOne(id: string) {
     try {
       const user = await this.prisma.user.findUnique({
         where: { id },
-        include: { profile: true },
+        include: { profile: true, notificationSettings: true },
       });
 
       if (!user) throw new NotFoundException('User not found');
@@ -159,7 +180,6 @@ export class UsersService {
     }
   }
 
-  // ✅ Soft delete
   async remove(id: string) {
     const existingUser = await this.prisma.user.findUnique({ where: { id } });
 

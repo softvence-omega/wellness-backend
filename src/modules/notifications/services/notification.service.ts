@@ -9,6 +9,7 @@ import { SendNotificationDto } from '../dto/sendNotification.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ApiResponse } from '../types/apiResponse';
 import { Notification, Prisma } from '@prisma/client';
+import { NotificationCategory } from 'src/common/enums/notification-category.enum';
 
 @Injectable()
 export class NotificationService {
@@ -26,12 +27,74 @@ export class NotificationService {
     data,
     eventid,
     id,
+    category,
   }: SendNotificationDto): Promise<ApiResponse<Notification>> {
     try {
-      if (!token || !title || !body || !id) {
+      if (!token || !title || !body || !id || !category) {
         throw new BadRequestException(
-          'Token, title, body, and user ID are required.',
+          'Token, title, body, user ID, and category are required.',
         );
+      }
+
+      const user = await this.prisma.user.findUnique({
+        where: { id },
+        include: { notificationSettings: true },
+      });
+
+      if (!user) {
+        throw new BadRequestException('User not found.');
+      }
+
+      if (user.notificationSettings?.doNotDisturb) {
+        this.logger.log(
+          `User ${id} has do not disturb enabled, skipping notification.`,
+        );
+        return {
+          data: null,
+          message: 'User has do not disturb enabled.',
+          success: true,
+        };
+      }
+
+      switch (category) {
+        case NotificationCategory.SYSTEM_ALERTS:
+          if (!user.notificationSettings?.systemAlerts) {
+            this.logger.log(
+              `User ${id} has system alerts disabled, skipping notification.`,
+            );
+            return {
+              data: null,
+              message: 'User has system alerts disabled.',
+              success: true,
+            };
+          }
+          break;
+        case NotificationCategory.PERSONALIZED_NUDGES:
+          if (!user.notificationSettings?.personalizedNudges) {
+            this.logger.log(
+              `User ${id} has personalized nudges disabled, skipping notification.`,
+            );
+            return {
+              data: null,
+              message: 'User has personalized nudges disabled.',
+              success: true,
+            };
+          }
+          break;
+        case NotificationCategory.WELLNESS_NUDGES:
+          if (!user.notificationSettings?.wellnessNudges) {
+            this.logger.log(
+              `User ${id} has wellness nudges disabled, skipping notification.`,
+            );
+            return {
+              data: null,
+              message: 'User has wellness nudges disabled.',
+              success: true,
+            };
+          }
+          break;
+        default:
+          break;
       }
 
       const message = {
@@ -65,6 +128,7 @@ export class NotificationService {
           },
           userId: id,
           eventId: eventid || null,
+          category,
         },
       });
 
