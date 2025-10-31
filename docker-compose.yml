@@ -1,0 +1,12 @@
+
+
+services:
+  wellness-backend:
+    build: .
+    image: sakibsakib/wellness-backend:latest
+    container_name: wellnessbackend
+    restart: always
+    env_file: .env
+    ports:
+      - "3007:3007"
+    command: npm run start:prod
