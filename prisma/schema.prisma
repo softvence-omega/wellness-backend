@@ -41,11 +41,44 @@ model User {
   MedicalReports          MedicalReport[]
   // Relation with notifications
   notifications           Notification[]
+  roomMembers            RoomMember[]
   notificationSettings    NotificationSettings?
 
   @@index([createdAt])
 }
 
+
+model Room {
+  id       String   @id @default(cuid()) // Changed to CUID
+  name      String   @unique
+  maxPrompts  Int @default(5)
+  promptUsed Int @default(0)
+  expiresAt  DateTime?
+  lastActive DateTime?
+  members   RoomMember[]
+  chats     Chat[]
+  capacity  Int?
+  location  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([name])
+}
+
+model RoomMember {
+  id        String   @id @default(cuid()) // Changed to CUID
+  roomId    String
+  userId    String
+  joinedAt  DateTime @default(now())
+  role      String   @default("member")
+  leftAt    DateTime?
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@index([roomId])
+  @@index([userId])
+}
 model NotificationSettings {
   id                   String   @id @default(cuid())
   userId               String   @unique
@@ -426,6 +459,8 @@ model Chat {
   conversationId String // Changed to String
   senderId       String // Changed to String
   type           MessageType
+  roomId         String?
+  Room           Room?        @relation(fields: [roomId], references: [id])
   content        String?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @default(now()) @updatedAt

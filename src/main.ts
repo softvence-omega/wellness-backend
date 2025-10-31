@@ -23,7 +23,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { TimeoutInterceptor } from './common/interceptors/timeout.interceptor';
 
 // Alternative ports to try if default port is busy
-const ALTERNATIVE_PORTS = [3001, 3002, 5000, 8000, 8080];
+const ALTERNATIVE_PORTS = [3001, 3002, 3007, 5000, 8000, 8080];
 
 async function bootstrap() {
   // Create Winston logger instance
