@@ -1,86 +1,137 @@
-// import { Body, Controller, Get, Param, Post, Put, Query, Req, UseGuards } from '@nestjs/common';
-// import { ChatService } from './chat.service';
-// import { CreateConversationDto } from './dto/create-conversation.dto';
-// import { CreateChatDto } from './dto/create-chat.dto';
-// import { successResponse } from 'src/common/response';
-// import { Roles } from '../auth/decorators/roles.decorator';
-// import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-// import { RolesGuard } from '../auth/guards/role-auth.guard';
+// src/chat/chat.controller.ts
+import {
+  Controller,
+  Post,
+  Get,
+  Param,
+  Body,
+  UseGuards,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+  ApiBody,
+} from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ChatService } from './chat.service';
+import { CreateRoomDto } from './dto/create-room.dto';
+import { SendMessageDto } from './dto/send-message.dto';
+import { CurrentUser } from './decorators/current-user.decorator';
+import { ChatResult } from './types/chat-response.type';
 
-// @UseGuards(JwtAuthGuard, RolesGuard)
-// @Controller('chat')
-// export class ChatController {
-//     constructor(private chatService: ChatService) { }
+@ApiTags('Chat Rooms')
+@ApiBearerAuth()
+@Controller('chat')
+@UseGuards(JwtAuthGuard)
+export class ChatController {
+  constructor(private readonly chatService: ChatService) {}
 
-//     // Create new conversation
-//     @Roles('ADMIN', 'USER')
-//     @Post('conversation')
-//     async createConversation(@Req() req: any, @Body() dto: CreateConversationDto) {
-//         const userId = req.user.userId;
-//         console.log("user", userId)
-//         const result = await this.chatService.createConversation(dto, userId);
-//         return successResponse(result, 'Conversation created successfully');
-//     }
+  // Helper method to get user ID from user object
+  private getUserId(user: any): string {
+    console.log('=== Getting User ID ===');
+    console.log('User object:', user);
+    console.log('Available keys:', Object.keys(user || {}));
+    
+    // Try different possible ID fields
+    const userId = user?.sub || user?.id || user?.userId;
+    console.log('Resolved userId:', userId);
+    
+    if (!userId) {
+      throw new HttpException('User ID not found in JWT payload', HttpStatus.UNAUTHORIZED);
+    }
+    
+    return userId;
+  }
 
-//     // Get all conversations of a user
-//     @Roles('ADMIN', 'USER')
+  @Post('room')
+  @ApiOperation({ summary: 'Create a new chat room' })
+  @ApiBody({ type: CreateRoomDto })
+  @ApiResponse({ status: 201, description: 'Room created' })
+  async createRoom(@CurrentUser() user: any, @Body() dto: CreateRoomDto) {
+    try {
+      const userId = this.getUserId(user);
+      return await this.chatService.createRoom(userId, dto);
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'Failed to create room',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
 
-//     @Get('get-all-conversation')
-//     async getConversations(
-//         @Req() req: any,
-//         @Query('page') page = 1,
-//         @Query('limit') limit = 20,
-//         @Query('searchTerm') searchTerm : string
-//     ) {
-//         const userId = req.user.userId
-//         const result = await this.chatService.getConversations(
-//             Number(userId),
-//             Number(page),
-//             Number(limit),
-//             searchTerm
-//         );
-//         return successResponse(result, 'Conversations fetched successfully');
-//     }
+  @Post('room/:id/join')
+  @ApiOperation({ summary: 'Join a chat room' })
+  @ApiParam({ name: 'id', description: 'Room ID' })
+  async joinRoom(@CurrentUser() user: any, @Param('id') id: string) {
+    try {
+      const userId = this.getUserId(user);
+      console.log(`Joining room ${id} with user ${userId}`);
+      return await this.chatService.joinRoom(userId, id);
+    } catch (error) {
+      console.error('Join room error:', error);
+      throw new HttpException(error.message, HttpStatus.FORBIDDEN);
+    }
+  }
 
-//     // Create chat message
-//     @Roles('ADMIN', 'USER')
-//     @Post('create-message')
-//     async createChat(@Req() req: any, @Body() dto: CreateChatDto) {
-//         const userId = req.user.userId
+  @Post('room/:id/leave')
+  @ApiOperation({ summary: 'Leave a chat room' })
+  @ApiParam({ name: 'id', description: 'Room ID' })
+  async leaveRoom(@CurrentUser() user: any, @Param('id') id: string) {
+    try {
+      const userId = this.getUserId(user);
+      return await this.chatService.leaveRoom(userId, id);
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
+  }
 
-//         const result = await this.chatService.createChat(dto, userId);
-//         return successResponse(result, 'Message sent successfully');
-//     }
+  @Post('room/:id/message')
+  @ApiOperation({ summary: 'Send message in room' })
+  @ApiParam({ name: 'id', description: 'Room ID' })
+  @ApiBody({ type: SendMessageDto })
+  @ApiResponse({ status: 200, description: 'Message sent' })
+  @ApiResponse({ status: 400, description: 'Prompt expired' })
+  async sendMessage(
+    @CurrentUser() user: any,
+    @Param('id') id: string,
+    @Body() dto: SendMessageDto,
+  ): Promise<ChatResult> {
+    try {
+      const userId = this.getUserId(user);
+      return await this.chatService.sendMessage(userId, id, dto);
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
+  }
 
-//     @Roles('ADMIN', 'USER')
-//     @Put('delete-conversation-with-chats/:conversationId')
-//     async deleteConversationWithChat(
-//         @Req() req: any,
-//         @Param('conversationId') conversationId: string, // only need ID from body
-//     ) {
-//         const userId = req.user.userId;
+  @Get('room/:id')
+  @ApiOperation({ summary: 'Get room with chat history' })
+  @ApiParam({ name: 'id', description: 'Room ID' })
+  async getRoom(@CurrentUser() user: any, @Param('id') id: string) {
+    try {
+      const userId = this.getUserId(user);
+      return await this.chatService.getRoom(userId, id);
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.NOT_FOUND);
+    }
+  }
 
-//         const result = await this.chatService.deleteConversationWithChats(
-//             Number(conversationId),
-//             Number(userId),
-//         );
+  @Get('rooms')
+  @ApiOperation({ summary: 'List active rooms for user' })
+  async listRooms(@CurrentUser() user: any) {
+    try {
+      const userId = this.getUserId(user);
+      return await this.chatService.listRooms(userId);
+    } catch (error) {
+      throw new HttpException('Failed to fetch rooms', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
 
-//         return successResponse(result, 'Conversation deleted successfully');
-//     }
 
-//     // Get all messages of a conversation
-//     @Roles('ADMIN', 'USER')
-//     @Get('messages/:conversationId')
-//     async getChats(
-//         @Param('conversationId') conversationId: string,
-//         @Query('page') page = 1,
-//         @Query('limit') limit = 20,
-//     ) {
-//         const result = await this.chatService.getChats(
-//             Number(conversationId),
-//             Number(page),
-//             Number(limit),
-//         );
-//         return successResponse(result, 'Messages fetched successfully');
-//     }
-// }
+  
+}

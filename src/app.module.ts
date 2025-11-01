@@ -86,6 +86,7 @@ import { NudgeModule } from './modules/nudge/nudge.module';
 import { LabReportFileUploadModule } from './modules/lab-report-upload/lab-report-upload.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { NotificationModule } from './modules/notifications/notification.module';
+import { ChatModule } from './modules/chat/chat.module';
 
 @Module({
   imports: [
@@ -108,6 +109,7 @@ import { NotificationModule } from './modules/notifications/notification.module'
     NudgeModule,
     LabReportFileUploadModule,
     NotificationModule,
+    ChatModule,
 
     
     BullModule.forRoot({

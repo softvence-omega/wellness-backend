@@ -21,6 +21,7 @@ if (result.error) {
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { TimeoutInterceptor } from './common/interceptors/timeout.interceptor';
+import { WsAdapter } from '@nestjs/platform-ws';
 
 // Alternative ports to try if default port is busy
 const ALTERNATIVE_PORTS = [3001, 3002, 3007, 5000, 8000, 8080];
@@ -72,6 +73,10 @@ async function bootstrap() {
     });
 
     const configService = app.get(ConfigService);
+
+    //adapter for WebSockets
+    app.useWebSocketAdapter(new WsAdapter(app));
+    
     if (!configService) {
       throw new Error('ConfigService not available');
     }
@@ -438,6 +443,7 @@ async function bootstrap() {
         `Could not find an available port. Tried: ${[defaultPort, ...ALTERNATIVE_PORTS].join(', ')}`,
       );
     }
+    console.log(`WebSocket: ws://localhost:${port}/api/v1/chat`);
 
     // Startup success message
     logger.log(` Wellness API Server is running!`);

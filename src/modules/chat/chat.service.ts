@@ -1,159 +1,239 @@
-// import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-// import { PrismaService } from 'src/prisma/prisma.service';
-// import { CreateConversationDto } from './dto/create-conversation.dto';
-// import { CreateChatDto } from './dto/create-chat.dto';
+// src/chat/chat.service.ts
+import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { AiClientService } from './ai/ai-client.service';
+import { CreateRoomDto } from './dto/create-room.dto';
+import { SendMessageDto } from './dto/send-message.dto';
+import { MessageType } from '@prisma/client';
 
-// @Injectable()
-// export class ChatService {
-//     constructor(private prisma: PrismaService) { }
+interface SendMessageResult {
+  userMessage: any;
+  aiMessage: any;
+  roomId: string;
+}
 
-//     //Conversation create
-//     async createConversation(dto: CreateConversationDto, userId: any) {
-//         const conversation = await this.prisma.conversation.create({
-//             data: {
-//                 title: dto.title,
-//                 userId: userId
-//             }
-//         })
-//         return conversation;
-//     }
+interface ExpiredResult {
+  expired: true;
+  message: string;
+}
 
-//     //List all conversation for a user
-//     async getConversations(userId: number, page = 1, limit = 20, searchTerm?: string) {
-//         //Build search filter
+type ChatResult = SendMessageResult | ExpiredResult;
 
-//         const where: any = { userId };
-//         if (searchTerm && searchTerm.trim() != '') {
-//             where.title = {
-//                 contains: searchTerm,
-//                 mode: 'insensitive'
-//             }
-//         }
-//         // Fetch conversations with the latest chat included
-//         const conversations = await this.prisma.conversation.findMany({
-//             where,
-//             orderBy: {
-//                 updatedAt: 'desc',
-//             },
-//             skip: (page - 1) * limit,
-//             take: limit,
-//             include: {
-//                 chats: {
-//                     orderBy: {
-//                         createdAt: 'desc',
-//                     },
-//                     take: 1,
-//                     include: {
-//                         sender: {
-//                             select: {
-//                                 id: true,
-//                                 email: true,
-//                                 profile: {   // ✅ put it inside select, not include
-//                                     select: {
-//                                         fullName: true,
-//                                     },
-//                                 },
-//                             },
-//                         },
-//                     },
-//                 },
-//             },
-//         });
+@Injectable()
+export class ChatService {
+  constructor(
+    private prisma: PrismaService,
+    private aiClient: AiClientService,
+  ) {}
+  async createRoom(userId: string, dto: CreateRoomDto) {
 
-//         // Total conversations count for pagination
-//         const total = await this.prisma.conversation.count({
-//             where: {
-//                 userId
-//             }
-//         })
+  const conversation = await this.prisma.conversation.create({
+    data: { 
+      title: dto.name,
+      user: {
+        connect: { id: userId }  
+      }
+    },
+  });
 
-//         // Map to a clear structure
+  return this.prisma.room.create({
+    data: {
+      name: dto.name,
+      maxPrompts: dto.maxPrompts || 10, 
+      members: { 
+        create: { 
+          user: {
+            connect: { id: userId }  
+          }
+        } 
+      },
+      chats: {
+        create: {
+          conversationId: conversation.id,
+          senderId: userId,
+          type: MessageType.TEXT,
+          content: `Room "${dto.name}" created`,
+        },
+      },
+    },
+    include: { chats: true },
+  });
+}
 
-//         const result = conversations.map((conv) => ({
-//             id: conv.id,
-//             title: conv.title,
-//             latestMessage: conv.chats[0] || null,
-//             updateAt: conv.updatedAt
-//         }))
-//         return {
-//             result,
-//             meta: {
-//                 total,
-//                 page,
-//                 lastPage: Math.ceil(total / limit)
-//             }
-//         }
-//     }
+  async joinRoom(userId: string, roomId: string) {
+    const room = await this.prisma.room.findUnique({ where: { id: roomId } });
+    if (!room || (room.expiresAt && new Date() > room.expiresAt)) {
+      throw new BadRequestException('Room not found or expired');
+    }
 
-//     //create chat message
-//     async createChat(dto: CreateChatDto, userId: any) {
-//         //check if conversation exists
-//         const conv = await this.prisma.conversation.findUnique({
-//             where: { id: Number(dto.conversationId) }
-//         })
-//         if (!conv) throw new NotFoundException('Conversation not found')
+    const existing = await this.prisma.roomMember.findUnique({
+      where: { roomId_userId: { roomId, userId } },
+    });
 
-//         return this.prisma.chat.create({
-//             data: {
-//                 conversationId: Number(dto.conversationId),
-//                 senderId: userId,
-//                 type: dto.type,
-//                 content: dto.content
-//             }
-//         })
-//     }
+    if (existing?.leftAt) {
+      return this.prisma.roomMember.update({
+        where: { id: existing.id },
+        data: { leftAt: null },
+      });
+    }
 
-//     //get all chats of a conversation
-//     async getChats(conversationId: number, page: number, limit: number) {
-//         const skip = (page - 1) * limit;
-//         const chats = await this.prisma.chat.findMany({
-//             where: { conversationId },
-//             orderBy: { createdAt: 'desc' },
-//             skip,
-//             take: limit,
-//         })
-//         const total = await this.prisma.chat.count({
-//             where: {
-//                 conversationId
-//             }
-//         })
+    if (!existing) {
+      return this.prisma.roomMember.create({ data: { roomId, userId } });
+    }
+    return existing;
+  }
 
-//         return {
-//             result: chats.reverse(),
-//             meta: {
-//                 total,
-//                 page,
-//                 lastPage: Math.ceil(total / limit)
-//             }
-//         }
-//     }
-//     // Delete a conversation and all its chats
-//     async deleteConversationWithChats(conversationId: number, userId: number) {
-//         // 1. check if the conversation exists and belongs to the user
-//         const conv = await this.prisma.conversation.findUnique({
-//             where: {
-//                 id: conversationId
-//             }
-//         })
+  async leaveRoom(userId: string, roomId: string) {
+    await this.prisma.roomMember.updateMany({
+      where: { roomId, userId, leftAt: null },
+      data: { leftAt: new Date() },
+    });
 
-//         if (!conv) throw new NotFoundException('Conversation not found');
-//         if (conv.userId !== userId) throw new ForbiddenException('Not allowed to delete conversation')
+    const active = await this.prisma.roomMember.count({ where: { roomId, leftAt: null } });
+    if (active === 0) {
+      await this.prisma.room.update({
+        where: { id: roomId },
+        data: { expiresAt: new Date(Date.now() + 10 * 60 * 1000) },
+      });
+    }
+  }
 
-//         // 2. Delete all related chats first
+// In your chat.service.ts - update sendMessage method
+async sendMessage(userId: string, roomId: string, dto: SendMessageDto): Promise<ChatResult> {
+  const room = await this.prisma.room.findUnique({
+    where: { id: roomId },
+    include: { chats: { take: 1, orderBy: { createdAt: 'asc' } } },
+  });
+  if (!room || (room.expiresAt && new Date() > room.expiresAt)) {
+    throw new BadRequestException('Room not found or expired');
+  }
 
-//         await this.prisma.chat.deleteMany({
-//             where: {
-//                 conversationId
-//             }
-//         })
+  const member = await this.prisma.roomMember.findUnique({
+    where: { roomId_userId: { roomId, userId } },
+  });
+  if (!member || member.leftAt) throw new ForbiddenException('Not in room');
 
-//         // 3. Delete the conversation itself
-//         await this.prisma.conversation.delete({
-//             where: { id: conversationId },
-//         });
+  if (room.promptUsed >= room.maxPrompts) {
+    return { expired: true, message: 'Prompt expired. Please use another chat.' };
+  }
 
-//         return;
+  // Get conversationId from first chat
+  const conversationId = room.chats[0]?.conversationId;
+  if (!conversationId) throw new BadRequestException('No conversation linked');
 
-//     }
+  const userMsg = await this.prisma.chat.create({
+    data: {
+      conversationId,
+      roomId,
+      senderId: userId,
+      type: MessageType.TEXT,
+      content: dto.content,
+    },
+  });
 
-// }
+  await this.prisma.room.update({
+    where: { id: roomId },
+    data: { promptUsed: { increment: 1 }, lastActive: new Date() },
+  });
+
+  // Pass both userId and dto.userId to AI service
+  const aiResp = await this.aiClient.sendQuery(dto.content, userId, dto.userId);
+  const aiMsg = await this.prisma.chat.create({
+    data: {
+      conversationId,
+      roomId,
+      senderId: userId,
+      type: MessageType.AI_RESPONSE,
+      content: aiResp.response,
+    },
+  });
+
+  return { userMessage: userMsg, aiMessage: aiMsg, roomId };
+}
+
+  // async sendMessage(userId: string, roomId: string, dto: SendMessageDto): Promise<ChatResult> {
+  //   const room = await this.prisma.room.findUnique({
+  //     where: { id: roomId },
+  //     include: { chats: { take: 1, orderBy: { createdAt: 'asc' } } },
+  //   });
+  //   if (!room || (room.expiresAt && new Date() > room.expiresAt)) {
+  //     throw new BadRequestException('Room not found or expired');
+  //   }
+
+  //   const member = await this.prisma.roomMember.findUnique({
+  //     where: { roomId_userId: { roomId, userId } },
+  //   });
+  //   if (!member || member.leftAt) throw new ForbiddenException('Not in room');
+
+  //   if (room.promptUsed >= room.maxPrompts) {
+  //     return { expired: true, message: 'Prompt expired. Please use another chat.' };
+  //   }
+
+  //   // Get conversationId from first chat
+  //   const conversationId = room.chats[0]?.conversationId;
+  //   if (!conversationId) throw new BadRequestException('No conversation linked');
+
+  //   const userMsg = await this.prisma.chat.create({
+  //     data: {
+  //       conversationId,
+  //       roomId,
+  //       senderId: userId,
+  //       type: MessageType.TEXT,
+  //       content: dto.content,
+  //     },
+  //   });
+
+  //   await this.prisma.room.update({
+  //     where: { id: roomId },
+  //     data: { promptUsed: { increment: 1 }, lastActive: new Date() },
+  //   });
+
+  //   const aiResp = await this.aiClient.sendQuery(dto.content, userId);
+  //   const aiMsg = await this.prisma.chat.create({
+  //     data: {
+  //       conversationId,
+  //       roomId,
+  //       senderId: userId,
+  //       type: MessageType.AI_RESPONSE,
+  //       content: aiResp.response,
+  //     },
+  //   });
+
+  //   return { userMessage: userMsg, aiMessage: aiMsg, roomId };
+  // }
+
+  async getRoom(userId: string, roomId: string) {
+    const room = await this.prisma.room.findUnique({
+      where: { id: roomId },
+      include: {
+        chats: {
+          orderBy: { createdAt: 'asc' },
+          include: { sender: { select: { id: true, email: true } } },
+        },
+        members: { include: { user: { select: { id: true, email: true } } } },
+      },
+    });
+
+    if (!room || (room.expiresAt && new Date() > room.expiresAt)) {
+      throw new BadRequestException('Room not found or expired');
+    }
+
+    const isMember = room.members.some(m => m.userId === userId && !m.leftAt);
+    if (!isMember) throw new ForbiddenException('Not in room');
+
+    return room;
+  }
+
+  async listRooms(userId: string) {
+    return this.prisma.roomMember.findMany({
+      where: { userId, leftAt: null },
+      include: {
+        room: {
+          include: {
+            _count: { select: { chats: true } },
+          },
+        },
+      },
+    });
+  }
+}

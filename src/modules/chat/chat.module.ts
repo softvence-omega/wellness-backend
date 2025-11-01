@@ -1,11 +1,18 @@
-// import { Module } from '@nestjs/common';
-// import { ChatService } from './chat.service';
-// import { ChatController } from './chat.controller';
-// import { PrismaModule } from '../../prisma/prisma.module';
+// src/chat/chat.module.ts
+import { Module } from '@nestjs/common';
+import { ChatController } from './chat.controller';
+import { ChatGateway } from './chat.gateway';
+import { PrismaService } from 'src/prisma/prisma.service';
 
-// @Module({
-//   imports: [PrismaModule],
-//   providers: [ChatService],
-//   controllers: [ChatController],
-// })
-// export class ChatModule {}
+import { HttpModule } from '@nestjs/axios';
+import { ChatService } from './chat.service';
+import { AiClientService } from './ai/ai-client.service';
+import { WsJwtGuard } from '../auth/guards/ws-jwt.guard';
+import { ConfigService } from '@nestjs/config';
+
+@Module({
+  imports: [HttpModule],
+  controllers: [ChatController],
+  providers: [ChatService, ChatGateway, PrismaService, AiClientService, WsJwtGuard, ConfigService],
+})
+export class ChatModule {}
