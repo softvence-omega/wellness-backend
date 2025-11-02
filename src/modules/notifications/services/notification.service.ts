@@ -191,4 +191,10 @@ export class NotificationService {
       throw new InternalServerErrorException('Failed to fetch notifications.');
     }
   }
+
+  async getNotificationSettings({ id }: { id: string }) {
+    return this.prisma.notificationSettings.findUnique({
+      where: { userId: id },
+    });
+  }
 }
