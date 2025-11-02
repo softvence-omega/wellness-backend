@@ -11,7 +11,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { NotificationCategory } from 'src/common/enums/notification-category.enum';
 
 export class SendNotificationDto {
-  @IsUUID('4', { message: 'ID must be a valid UUID (version 4).' })
+  @IsString()
   id: string;
 
   @ApiProperty({

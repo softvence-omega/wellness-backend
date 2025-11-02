@@ -44,7 +44,11 @@ export class UsersService {
     return settings;
   }
 
-  async profileUpdate(dto: UpdateProfileDto, userId: string) {
+  async profileUpdate(
+    dto: UpdateProfileDto,
+    userId: string,
+    file: Express.Multer.File,
+  ) {
     const isUserExist = await this.prisma.user.findUnique({
       where: { id: userId },
     });
@@ -52,6 +56,16 @@ export class UsersService {
     if (!isUserExist) throw new NotFoundException('User not found!');
     if (isUserExist.isDeleted)
       throw new NotFoundException('User already deleted!');
+
+    let fileUrl: string | undefined;
+    if (file) {
+      const uploadResult = await this.cloudinary.uploadBuffer(
+        file.buffer,
+        'photo/fileUrl',
+        'image',
+      );
+      fileUrl = uploadResult.secure_url;
+    }
 
     const updateProfile = await this.prisma.profile.update({
       where: { userId },
@@ -64,37 +78,13 @@ export class UsersService {
         healthGoal: dto.healthGoal,
         language: dto.language,
         isEnableNotification: dto.isEnableNotification,
+        photo: fileUrl,
       },
     });
 
+    console.log(updateProfile);
+
     return updateProfile;
-  }
-
-  async uploadFile(file: Express.Multer.File, userId: string) {
-    let fileUrl = '';
-
-    if (file) {
-      const uploadResult = await this.cloudinary.uploadBuffer(
-        file.buffer,
-        'photo/fileUrl',
-        'image',
-      );
-      fileUrl = uploadResult.secure_url;
-    }
-
-    const isUserExist = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-    if (!isUserExist) throw new NotFoundException('User not found!');
-    if (isUserExist.isDeleted)
-      throw new NotFoundException('User already deleted!');
-
-    const updatedProfile = await this.prisma.profile.update({
-      where: { userId },
-      data: { photo: fileUrl },
-    });
-
-    return updatedProfile;
   }
 
   async findAll(
