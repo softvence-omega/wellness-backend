@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Get,
   Post,
   Query,
   Req,
@@ -24,7 +25,7 @@ export class NotificationController {
     return { success: true, message: 'Notification sent successfully' };
   }
 
-  @Post('get')
+  @Get('get')
   @ApiBearerAuth()
   async getNotification(@Request() req) {
     if (!req.user) {
