@@ -456,16 +456,17 @@ model Conversation {
 
 model Chat {
   id             String       @id @default(cuid()) // Changed to CUID
-  conversationId String // Changed to String
-  senderId       String // Changed to String
-  type           MessageType
+  conversationId String? // Changed to String
+  senderId       String? // Changed to String
+  type           MessageType?
   roomId         String?
   Room           Room?        @relation(fields: [roomId], references: [id])
   content        String?
+  responseData   String?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @default(now()) @updatedAt
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
-  sender         User         @relation("ChatSender", fields: [senderId], references: [id])
+  conversation   Conversation? @relation(fields: [conversationId], references: [id])
+  sender         User?         @relation("ChatSender", fields: [senderId], references: [id])
 
   @@index([conversationId])
   @@index([createdAt])

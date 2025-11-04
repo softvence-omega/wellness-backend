@@ -23,6 +23,8 @@ import { CreateRoomDto } from './dto/create-room.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { ChatResult } from './types/chat-response.type';
+import { SaveAiResponseDto } from './dto/ai-response.dto';
+
 
 @ApiTags('Chat Rooms')
 @ApiBearerAuth()
@@ -36,15 +38,18 @@ export class ChatController {
     console.log('=== Getting User ID ===');
     console.log('User object:', user);
     console.log('Available keys:', Object.keys(user || {}));
-    
+
     // Try different possible ID fields
     const userId = user?.sub || user?.id || user?.userId;
     console.log('Resolved userId:', userId);
-    
+
     if (!userId) {
-      throw new HttpException('User ID not found in JWT payload', HttpStatus.UNAUTHORIZED);
+      throw new HttpException(
+        'User ID not found in JWT payload',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
-    
+
     return userId;
   }
 
@@ -128,10 +133,19 @@ export class ChatController {
       const userId = this.getUserId(user);
       return await this.chatService.listRooms(userId);
     } catch (error) {
-      throw new HttpException('Failed to fetch rooms', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        'Failed to fetch rooms',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
-
-  
+@Post('ai-response/:roomId')
+@ApiBody({ type: SaveAiResponseDto })
+async postAiResponse(
+  @Param('roomId') roomId: string,
+  @Body() body: SaveAiResponseDto,
+) {
+  return this.chatService.saveAiResponseToRoom(roomId, body);
+}
 }

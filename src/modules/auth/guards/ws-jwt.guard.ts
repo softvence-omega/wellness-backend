@@ -17,9 +17,13 @@ export class WsJwtGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const client = context.switchToWs().getClient();
+    console.log('🔐 WsJwtGuard - Client ID:', client.id);
+  console.log('🔐 WsJwtGuard - Headers:', client.handshake.headers);
+  console.log('🔐 WsJwtGuard - Auth header:', client.handshake.headers.authorization);
     const authHeader = client.handshake.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+       console.log('❌ WsJwtGuard - No valid auth header found');
       throw new UnauthorizedException('Missing or invalid token');
     }
 
