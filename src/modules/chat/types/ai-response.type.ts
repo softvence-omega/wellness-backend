@@ -1,4 +1,4 @@
-// src/chat/types/ai-response.type.ts
+
 export interface AiResponseItem {
   id: string;
   content: string;
@@ -13,4 +13,6 @@ export interface SaveAiResponseResponse {
     promptUsed: number;
     chat: AiResponseItem[];
   };
+
 }
+

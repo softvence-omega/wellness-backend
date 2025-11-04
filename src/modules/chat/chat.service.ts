@@ -1,4 +1,4 @@
-// src/chat/chat.service.ts
+
 import { Injectable, BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AiClientService } from './ai/ai-client.service';
@@ -291,10 +291,50 @@ async saveAiResponseToRoom(
         responseData: saved.responseData ?? '',
       });
     }
-    
+
     return {
       success: true,
       data: { roomId, maxPrompt, promptUsed, chat: savedChats },
+    };
+  }
+
+  async getAiResponseByRoom(roomId: string): Promise<SaveAiResponseResponse> {
+    const room = await this.prisma.room.findUnique({
+      where: { id: roomId },
+      select: {
+        id: true,
+        maxPrompts: true,
+        promptUsed: true,
+        chats: {
+          where: { type: MessageType.AI_RESPONSE },
+          select: {
+            id: true,
+            content: true,
+            responseData: true,
+          },
+          orderBy: { createdAt: 'asc' },
+        },
+      },
+    });
+
+    if (!room) {
+      throw new NotFoundException('Room not found');
+    }
+
+    const chat = room.chats.map(c => ({
+      id: c.id,
+      content: c.content ?? '',
+      responseData: c.responseData ?? '',
+    }));
+
+    return {
+      success: true,
+      data: {
+        roomId: room.id,
+        maxPrompt: room.maxPrompts,
+        promptUsed: room.promptUsed,
+        chat,
+      },
     };
   }
 }

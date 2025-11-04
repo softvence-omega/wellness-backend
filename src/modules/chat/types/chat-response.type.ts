@@ -1,4 +1,4 @@
-// src/chat/types/chat-response.type.ts
+
 export interface UserMessage {
   id: string;
   content: string;

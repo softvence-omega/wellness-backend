@@ -1,4 +1,3 @@
-// src/chat/chat.controller.ts
 import {
   Controller,
   Post,
@@ -24,6 +23,8 @@ import { SendMessageDto } from './dto/send-message.dto';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { ChatResult } from './types/chat-response.type';
 import { SaveAiResponseDto } from './dto/ai-response.dto';
+import { SaveAiResponseResponse } from './types/ai-response.type';
+import { AiResponseResponseDto } from './dto/ai-response-response.dto';
 
 
 @ApiTags('Chat Rooms')
@@ -39,7 +40,6 @@ export class ChatController {
     console.log('User object:', user);
     console.log('Available keys:', Object.keys(user || {}));
 
-    // Try different possible ID fields
     const userId = user?.sub || user?.id || user?.userId;
     console.log('Resolved userId:', userId);
 
@@ -147,5 +147,13 @@ async postAiResponse(
   @Body() body: SaveAiResponseDto,
 ) {
   return this.chatService.saveAiResponseToRoom(roomId, body);
+}
+@Get('ai-response/:roomId')
+@ApiOperation({ summary: 'Get all AI responses for a room' })
+@ApiParam({ name: 'roomId', description: 'Room ID' })
+@ApiResponse({ status: 200, type: AiResponseResponseDto }) 
+@ApiResponse({ status: 404, description: 'Room not found' })
+async getAiResponse(@Param('roomId') roomId: string) {
+  return this.chatService.getAiResponseByRoom(roomId);
 }
 }
