@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Get,
   Post,
   Query,
   Req,
@@ -19,12 +20,11 @@ export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
   @Post('send')
   async sendNotification(@Body() data: SendNotificationDto) {
-    await this.notificationService.sendPushNotification(data);
+  return  await this.notificationService.sendPushNotification(data);
 
-    return { success: true, message: 'Notification sent successfully' };
   }
 
-  @Post('get')
+  @Get('get')
   @ApiBearerAuth()
   async getNotification(@Request() req) {
     if (!req.user) {
@@ -40,5 +40,23 @@ export class NotificationController {
     }
 
     return this.notificationService.getNotification({ id: req.user.userId });
+  }
+
+  @Get('get-settings')
+  @ApiBearerAuth()
+  async getNotificationSettings(@Request() req) {
+    if (!req.user) {
+      throw new BadRequestException(
+        'User not authenticated - req.user is undefined',
+      );
+    }
+
+    if (!req.user.userId) {
+      throw new BadRequestException(
+        `User ID is required. User object: ${JSON.stringify(req.user)}`,
+      );
+    }
+
+    return this.notificationService.getNotificationSettings({ id: req.user.userId });
   }
 }

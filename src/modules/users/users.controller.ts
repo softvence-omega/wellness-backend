@@ -37,36 +37,25 @@ export class UsersController {
 
   @Roles('ADMIN', 'USER')
   @Put('profile')
+  @UseInterceptors(FileInterceptor('file'))
   async userProfileUpdate(
-    @Body() dto: UpdateProfileDto,
+    @Body() body: { dto: string },
     @Req() req: AuthenticatedRequest,
+    @UploadedFile() file: Express.Multer.File,
   ) {
     if (!req.user) {
       throw new UnauthorizedException();
     }
-    const result = await this.userService.profileUpdate(dto, req.user.userId);
+
+    const dto: UpdateProfileDto = JSON.parse(body.dto);
+
+    const result = await this.userService.profileUpdate(
+      dto,
+      req.user.userId,
+      file,
+    );
+    console.log(result);
     return successResponse(result, 'User profile updated successfully.');
-  }
-
-  @Roles('ADMIN', 'USER')
-  @Put('profile-photo')
-  @UseInterceptors(FileInterceptor('file'))
-  async uploadFile(
-    @UploadedFile() file: Express.Multer.File,
-    @Req() req: AuthenticatedRequest,
-  ) {
-    const userId = req.user?.userId;
-    console.log('user id ', userId);
-    if (!userId) {
-      throw new BadRequestException('No User id.');
-    }
-
-    if (!file) {
-      throw new BadRequestException('No file uploaded. Please provide a file.');
-    }
-
-    const data = await this.userService.uploadFile(file, userId);
-    return successResponse(data, 'Profile photo updated successfully');
   }
 
   @Get('user-list')

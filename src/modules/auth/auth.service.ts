@@ -111,61 +111,124 @@ export class AuthService {
     }
   }
 
-  async register(dto: CreateUserDto) {
-    this.logger.log(`Register attempt for email: ${dto.email}`);
+  // async register(dto: CreateUserDto) {
+  //   this.logger.log(`Register attempt for email: ${dto.email}`);
+  //      console.log(dto)
+  //   const existingUser = await this.prisma.user.findUnique({
+  //     where: { email: dto.email, isDeleted: false },
+  //     select: { id: true },
+  //   });
+  //   if (existingUser) {
+  //     throw new BadRequestException('Email is already registered.');
+  //   }
 
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email: dto.email, isDeleted: false },
-      select: { id: true },
-    });
-    if (existingUser) {
-      throw new BadRequestException('Email is already registered.');
-    }
+  //   const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
-
-    const user = await this.prisma.$transaction(async (prisma) => {
-       prisma.user.create({
-        data: {
-          email: dto.email,
-          password: hashedPassword,
-          role: Role.USER,
-          profile: {
-            create: {
-              fullName: dto.fullName,
-              language: (dto.language as Language) || Language.EN,
-              isEnableNotification: dto.isEnableNotification ?? false,
-              height: dto.height ?? null,
-              weight: dto.weight ?? null,
-              dateOfBirth: dto.dateOfBirth ?? null,
-              gender: dto.gender ?? null,
-              healthGoal: dto.healthGoal ?? null,
-            },
-          },
-          isAgreeTerms: dto.isAgreeTerms ?? false,
-        },
-        select: {
-          id: true, // CUID string
-          email: true,
-          role: true,
-          profile: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
+  //   const user = await this.prisma.$transaction(async (prisma) => {
+  //      prisma.user.create({
+  //       data: {
+  //         email: dto.email,
+  //         password: hashedPassword,
+  //         role: Role.USER,
+  //         profile: {
+  //           create: {
+  //             fullName: dto.fullName,
+  //             language: (dto.language as Language) || Language.EN,
+  //             isEnableNotification: dto.isEnableNotification ?? false,
+  //             height: dto.height ?? null,
+  //             weight: dto.weight ?? null,
+  //             dateOfBirth: dto.dateOfBirth ?? null,
+  //             gender: dto.gender ?? null,
+  //             healthGoal: dto.healthGoal ?? null,
+  //           },
+  //         },
+  //         isAgreeTerms: dto.isAgreeTerms ?? false,
+  //       },
+  //       select: {
+  //         id: true, // CUID string
+  //         email: true,
+  //         role: true,
+  //         profile: true,
+  //         createdAt: true,
+  //         updatedAt: true,
+  //       },
+  //     });
       
-      await prisma.notificationSettings.create({
-    data: {
-      userId: user.id,
-    },
-  });
-      return user;
-    });
-    const tokens = await this.generateTokens(user.id, user.email, user.role);
-    await this.saveRefreshToken(user.id, tokens.refreshToken);
+  // //     await prisma.notificationSettings.create({
+  // //   data: {
+  // //     userId: user.id,
+  // //   },
+  // // });
+  // // console.log(user.id);
+  //     return user;
+  //   });
+  //   // const tokens = await this.generateTokens(user.id, user.email, user.role);
+  //   // await this.saveRefreshToken(user.id, tokens.refreshToken);
 
-    return { message: 'User registered successfully', user, tokens };
+  //   // return { message: 'User registered successfully', user, tokens };
+  // }
+
+  async register(dto: CreateUserDto) {
+  this.logger.log(`Register attempt for email: ${dto.email}`);
+
+  const existingUser = await this.prisma.user.findUnique({
+    where: { email: dto.email },
+    select: { id: true },
+  });
+
+  if (existingUser) {
+    throw new BadRequestException('Email is already registered.');
   }
+
+  const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+  const user = await this.prisma.$transaction(async (prisma) => {
+   
+    const createdUser = await prisma.user.create({
+      data: {
+        email: dto.email,
+        password: hashedPassword,
+        role: Role.USER,
+        isAgreeTerms: dto.isAgreeTerms ?? false,
+        profile: {
+          create: {
+            fullName: dto.fullName,
+            language: (dto.language as Language) || Language.EN,
+            isEnableNotification: dto.isEnableNotification ?? false,
+            height: dto.height ?? null,
+            weight: dto.weight ?? null,
+            dateOfBirth: dto.dateOfBirth ?? null,
+            gender: dto.gender ?? null,
+            healthGoal: dto.healthGoal ?? null,
+          },
+        },
+        
+      },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        profile: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    
+    await prisma.notificationSettings.create({
+      data: { userId: createdUser.id },
+    });
+
+    return createdUser;
+  });
+
+  
+  const tokens = await this.generateTokens(user.id, user.email, user.role);
+  await this.saveRefreshToken(user.id, tokens.refreshToken);
+
+  return { message: 'User registered successfully', user, tokens };
+}
+
 
   async registerAdmin(
     dto: CreateUserDto,
