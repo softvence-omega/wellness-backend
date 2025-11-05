@@ -25,6 +25,8 @@ import { ChatResult } from './types/chat-response.type';
 import { SaveAiResponseDto } from './dto/ai-response.dto';
 import { SaveAiResponseResponse } from './types/ai-response.type';
 import { AiResponseResponseDto } from './dto/ai-response-response.dto';
+import { CreateHealthScoreDto } from './health-score/dto/health-score.dto';
+import { HealthScoreService } from './health-score/health-score.service';
 
 
 @ApiTags('Chat Rooms')
@@ -32,7 +34,7 @@ import { AiResponseResponseDto } from './dto/ai-response-response.dto';
 @Controller('chat')
 @UseGuards(JwtAuthGuard)
 export class ChatController {
-  constructor(private readonly chatService: ChatService) {}
+  constructor(private readonly chatService: ChatService, private readonly healthScoreService: HealthScoreService) {}
 
   // Helper method to get user ID from user object
   private getUserId(user: any): string {
@@ -155,5 +157,28 @@ async postAiResponse(
 @ApiResponse({ status: 404, description: 'Room not found' })
 async getAiResponse(@Param('roomId') roomId: string) {
   return this.chatService.getAiResponseByRoom(roomId);
+}
+
+
+//==============this controller for the ai wellnessscore========
+
+@Post('health-score/:userId')
+@ApiOperation({ summary: 'Save health score for a user' })
+@ApiParam({ name: 'userId', description: 'User ID' })
+@ApiBody({ type: CreateHealthScoreDto })
+@ApiResponse({ status: 200, description: 'Health score saved' })
+async saveHealthScore(
+  @Param('userId') userId: string,
+  @Body() body: CreateHealthScoreDto,
+) {
+  return this.healthScoreService.saveHealthScore(userId, body); // ← Use service
+}
+
+@Get('health-score/:userId')
+@ApiOperation({ summary: 'Get all health scores for a user' })
+@ApiParam({ name: 'userId', description: 'User ID' })
+@ApiResponse({ status: 200, description: 'List of health scores' })
+async getHealthScores(@Param('userId') userId: string) {
+  return this.healthScoreService.getHealthScoresByUser(userId); // ← Use service
 }
 }

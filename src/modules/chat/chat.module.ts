@@ -9,10 +9,12 @@ import { ChatService } from './chat.service';
 import { AiClientService } from './ai/ai-client.service';
 import { WsJwtGuard } from '../auth/guards/ws-jwt.guard';
 import { ConfigService } from '@nestjs/config';
+import { HealthDataService } from '../watch-data/watch-data.service';
+import { HealthScoreService } from './health-score/health-score.service';
 
 @Module({
   imports: [HttpModule],
   controllers: [ChatController],
-  providers: [ChatService, ChatGateway, PrismaService, AiClientService, WsJwtGuard, ConfigService],
+  providers: [ChatService,HealthScoreService, ChatGateway, PrismaService, AiClientService, WsJwtGuard, ConfigService],
 })
 export class ChatModule {}
