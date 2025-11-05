@@ -247,94 +247,106 @@ async sendMessage(userId: string, roomId: string, dto: SendMessageDto): Promise<
 
   //=======================for ai response========
 async saveAiResponseToRoom(
-    roomId: string,
-    dto: SaveAiResponseDto,
-  ): Promise<SaveAiResponseResponse> {
-    const { maxPrompt, promptUsed, chat } = dto;
-    const room = await this.prisma.room.findUnique({
-      where: { id: roomId },
-      include: { chats: { take: 1, orderBy: { createdAt: 'asc' } } },
+  roomId: string,
+  dto: SaveAiResponseDto,
+): Promise<SaveAiResponseResponse> {
+  const { maxPrompt, promptUsed, chat, aiTitle } = dto;
+
+  const room = await this.prisma.room.findUnique({
+    where: { id: roomId },
+    include: { chats: { take: 1, orderBy: { createdAt: 'asc' } } },
+  });
+  if (!room) throw new NotFoundException('Room not found');
+
+  let conversationId = room.chats[0]?.conversationId;
+  if (!conversationId) {
+    const member = await this.prisma.roomMember.findFirst({ where: { roomId } });
+    const conv = await this.prisma.conversation.create({
+      data: { title: room.name, userId: member!.userId },
     });
-    if (!room) throw new NotFoundException('Room not found');
-
-    let conversationId = room.chats[0]?.conversationId;
-    if (!conversationId) {
-      const member = await this.prisma.roomMember.findFirst({ where: { roomId } });
-      const conv = await this.prisma.conversation.create({
-        data: { title: room.name, userId: member!.userId },
-      });
-      conversationId = conv.id;
-    }
-
-
-    await this.prisma.room.update({
-      where: { id: roomId },
-      data: { maxPrompts: maxPrompt, promptUsed, lastActive: new Date() },
-    });
-    const savedChats: AiResponseItem[] = [];
-
-    for (const item of chat) {
-      const saved = await this.prisma.chat.create({
-        data: {
-          conversationId,
-          roomId,
-          senderId: null,
-          type: MessageType.AI_RESPONSE,
-          content: item.content,
-          responseData: item.responseData,
-        },
-      });
-
-      savedChats.push({
-        id: saved.id, 
-        content: saved.content ?? '',
-        responseData: saved.responseData ?? '',
-      });
-    }
-
-    return {
-      success: true,
-      data: { roomId, maxPrompt, promptUsed, chat: savedChats },
-    };
+    conversationId = conv.id;
   }
 
-  async getAiResponseByRoom(roomId: string): Promise<SaveAiResponseResponse> {
-    const room = await this.prisma.room.findUnique({
-      where: { id: roomId },
-      select: {
-        id: true,
-        maxPrompts: true,
-        promptUsed: true,
-        chats: {
-          where: { type: MessageType.AI_RESPONSE },
-          select: {
-            id: true,
-            content: true,
-            responseData: true,
-          },
-          orderBy: { createdAt: 'asc' },
-        },
-      },
-    });
+  await this.prisma.room.update({
+    where: { id: roomId },
+    data: {
+      maxPrompts: maxPrompt,
+      promptUsed,
+      lastActive: new Date(),
+      aiTitle,                     
+    },
+  });
 
-    if (!room) {
-      throw new NotFoundException('Room not found');
-    }
+  const savedChats: AiResponseItem[] = [];
 
-    const chat = room.chats.map(c => ({
-      id: c.id,
-      content: c.content ?? '',
-      responseData: c.responseData ?? '',
-    }));
-
-    return {
-      success: true,
+  for (const item of chat) {
+    const saved = await this.prisma.chat.create({
       data: {
-        roomId: room.id,
-        maxPrompt: room.maxPrompts,
-        promptUsed: room.promptUsed,
-        chat,
+        conversationId,
+        roomId,
+        senderId: null,
+        type: MessageType.AI_RESPONSE,
+        content: item.content,
+        responseData: item.responseData,
       },
-    };
+    });
+
+    savedChats.push({
+      id: saved.id,
+      content: saved.content ?? '',
+      responseData: saved.responseData ?? '',
+    });
   }
+
+  return {
+    success: true,
+    data: {
+      roomId,
+      aiTitle,                     
+      maxPrompt,
+      promptUsed,
+      chat: savedChats,
+    },
+  };
+}
+
+ async getAiResponseByRoom(roomId: string): Promise<SaveAiResponseResponse> {
+  const room = await this.prisma.room.findUnique({
+    where: { id: roomId },
+    select: {
+      id: true,
+      aiTitle: true,               // ← FETCH
+      maxPrompts: true,
+      promptUsed: true,
+      chats: {
+        where: { type: MessageType.AI_RESPONSE },
+        select: {
+          id: true,
+          content: true,
+          responseData: true,
+        },
+        orderBy: { createdAt: 'asc' },
+      },
+    },
+  });
+
+  if (!room) throw new NotFoundException('Room not found');
+
+  const chat = room.chats.map(c => ({
+    id: c.id,
+    content: c.content ?? '',
+    responseData: c.responseData ?? '',
+  }));
+
+  return {
+    success: true,
+    data: {
+      roomId: room.id,
+      aiTitle: room.aiTitle ?? undefined,   // ← RETURN
+      maxPrompt: room.maxPrompts,
+      promptUsed: room.promptUsed,
+      chat,
+    },
+  };
+}
 }

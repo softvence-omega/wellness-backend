@@ -9,6 +9,7 @@ export interface SaveAiResponseResponse {
   success: true;
   data: {
     roomId: string;
+    aiTitle?: string;
     maxPrompt: number;
     promptUsed: number;
     chat: AiResponseItem[];

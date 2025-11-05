@@ -1,4 +1,4 @@
-import { IsInt, IsArray, ValidateNested, IsString } from 'class-validator';
+import { IsInt, IsArray, ValidateNested, IsString, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -27,6 +27,11 @@ export class SaveAiResponseDto {
   @ValidateNested({ each: true })
   @Type(() => ChatItemDto)  // ← Now works!
   chat!: ChatItemDto[];
+
+  @ApiProperty({ description: 'Optional AI-generated title for the room', example: 'Blood Report Summary' })
+  @IsOptional()
+  @IsString()
+  aiTitle?: string;
 }
 
 

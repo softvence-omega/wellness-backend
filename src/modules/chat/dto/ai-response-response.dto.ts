@@ -19,6 +19,9 @@ class DataDto {
   @ApiProperty({ example: 10 })
   maxPrompt!: number;
 
+  @ApiProperty({ description: 'AI-generated title', example: 'Blood Report Summary', required: false })
+  aiTitle?: string;
+  
   @ApiProperty({ example: 3 })
   promptUsed!: number;
 
