@@ -7,6 +7,7 @@ import { SendMessageDto } from './dto/send-message.dto';
 import { MessageType } from '@prisma/client';
 import {  SaveAiResponseResponse } from './types/ai-response.type';
 import { SaveAiResponseDto } from './dto/ai-response.dto';
+import { RoomListResponse } from './types/room-list.type';
 
 interface SendMessageResult {
   userMessage: any;
@@ -232,18 +233,64 @@ async sendMessage(userId: string, roomId: string, dto: SendMessageDto): Promise<
     return room;
   }
 
-  async listRooms(userId: string) {
-    return this.prisma.roomMember.findMany({
-      where: { userId, leftAt: null },
-      include: {
-        room: {
-          include: {
-            _count: { select: { chats: true } },
+async listRooms(userId: string): Promise<RoomListResponse> {
+  const memberships = await this.prisma.roomMember.findMany({
+    where: {
+      userId,
+      leftAt: null,
+    },
+    select: {
+      id: true,
+      role: true,
+      joinedAt: true,
+      room: {
+        select: {
+          id: true,
+          name: true,
+          aiTitle: true,
+          maxPrompts: true,
+          promptUsed: true,
+          lastActive: true,
+          capacity: true,
+          location: true,
+          createdAt: true,
+          // Efficient chat count
+          chats: {
+            select: { id: true },
+            where: { type: MessageType.AI_RESPONSE }, // Only count AI responses
           },
         },
       },
-    });
-  }
+    },
+    orderBy: {
+      room: {
+        lastActive: 'desc', // Most recent first
+      },
+    },
+  });
+
+  // Transform to clean response
+  return {
+    success: true,
+    data: memberships.map(m => ({
+      membershipId: m.id,
+      role: m.role,
+      joinedAt: m.joinedAt.toISOString(),
+      room: {
+        id: m.room.id,
+        name: m.room.name,
+        aiTitle: m.room.aiTitle ?? null,
+        maxPrompts: m.room.maxPrompts,
+        promptUsed: m.room.promptUsed,
+        lastActive: m.room.lastActive?.toISOString() ?? null,
+        capacity: m.room.capacity ?? null,
+        location: m.room.location ?? null,
+        createdAt: m.room.createdAt.toISOString(),
+        chatCount: m.room.chats.length, // Direct count, no _count overhead
+      },
+    })),
+  };
+}
 
   //=======================for ai response========
 async saveAiResponseToRoom(
