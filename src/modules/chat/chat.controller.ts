@@ -7,6 +7,7 @@ import {
   UseGuards,
   HttpException,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -15,6 +16,7 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ChatService } from './chat.service';
@@ -27,14 +29,17 @@ import { SaveAiResponseResponse } from './types/ai-response.type';
 import { AiResponseResponseDto } from './dto/ai-response-response.dto';
 import { CreateHealthScoreDto } from './health-score/dto/health-score.dto';
 import { HealthScoreService } from './health-score/health-score.service';
-
+import { ListRoomsQueryDto } from './dto/room-list.dto';
 
 @ApiTags('Chat Rooms')
 @ApiBearerAuth()
 @Controller('chat')
 @UseGuards(JwtAuthGuard)
 export class ChatController {
-  constructor(private readonly chatService: ChatService, private readonly healthScoreService: HealthScoreService) {}
+  constructor(
+    private readonly chatService: ChatService,
+    private readonly healthScoreService: HealthScoreService,
+  ) {}
 
   // Helper method to get user ID from user object
   private getUserId(user: any): string {
@@ -128,57 +133,69 @@ export class ChatController {
     }
   }
 
+  // @Get('rooms')
+  // @ApiOperation({ summary: 'List active rooms for user' })
+  // async listRooms(@CurrentUser() user: any) {
+  //   try {
+  //     const userId = this.getUserId(user);
+  //     return await this.chatService.listRooms(userId);
+  //   } catch (error) {
+  //     throw new HttpException(
+  //       'Failed to fetch rooms',
+  //       HttpStatus.INTERNAL_SERVER_ERROR,
+  //     );
+  //   }
+  // }
+
   @Get('rooms')
-  @ApiOperation({ summary: 'List active rooms for user' })
-  async listRooms(@CurrentUser() user: any) {
-    try {
-      const userId = this.getUserId(user);
-      return await this.chatService.listRooms(userId);
-    } catch (error) {
-      throw new HttpException(
-        'Failed to fetch rooms',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+  @ApiOperation({ summary: 'List active rooms (offset pagination)' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 20 })
+  async listRooms(@CurrentUser() user: any, @Query() query: ListRoomsQueryDto) {
+    const userId = this.getUserId(user);
+    return this.chatService.listRooms(userId, {
+      page: query.page ?? 1,
+      limit: query.limit ?? 20,
+    });
   }
 
-@Post('ai-response/:roomId')
-@ApiBody({ type: SaveAiResponseDto })
-async postAiResponse(
-  @Param('roomId') roomId: string,
-  @Body() body: SaveAiResponseDto,
-) {
-  return this.chatService.saveAiResponseToRoom(roomId, body);
-}
-@Get('ai-response/:roomId')
-@ApiOperation({ summary: 'Get all AI responses for a room' })
-@ApiParam({ name: 'roomId', description: 'Room ID' })
-@ApiResponse({ status: 200, type: AiResponseResponseDto }) 
-@ApiResponse({ status: 404, description: 'Room not found' })
-async getAiResponse(@Param('roomId') roomId: string) {
-  return this.chatService.getAiResponseByRoom(roomId);
-}
+  
+  @Post('ai-response/:roomId')
+  @ApiBody({ type: SaveAiResponseDto })
+  async postAiResponse(
+    @Param('roomId') roomId: string,
+    @Body() body: SaveAiResponseDto,
+  ) {
+    return this.chatService.saveAiResponseToRoom(roomId, body);
+  }
+  @Get('ai-response/:roomId')
+  @ApiOperation({ summary: 'Get all AI responses for a room' })
+  @ApiParam({ name: 'roomId', description: 'Room ID' })
+  @ApiResponse({ status: 200, type: AiResponseResponseDto })
+  @ApiResponse({ status: 404, description: 'Room not found' })
+  async getAiResponse(@Param('roomId') roomId: string) {
+    return this.chatService.getAiResponseByRoom(roomId);
+  }
 
+  //==============this controller for the ai wellnessscore========
 
-//==============this controller for the ai wellnessscore========
+  @Post('health-score/:userId')
+  @ApiOperation({ summary: 'Save health score for a user' })
+  @ApiParam({ name: 'userId', description: 'User ID' })
+  @ApiBody({ type: CreateHealthScoreDto })
+  @ApiResponse({ status: 200, description: 'Health score saved' })
+  async saveHealthScore(
+    @Param('userId') userId: string,
+    @Body() body: CreateHealthScoreDto,
+  ) {
+    return this.healthScoreService.saveHealthScore(userId, body); // ← Use service
+  }
 
-@Post('health-score/:userId')
-@ApiOperation({ summary: 'Save health score for a user' })
-@ApiParam({ name: 'userId', description: 'User ID' })
-@ApiBody({ type: CreateHealthScoreDto })
-@ApiResponse({ status: 200, description: 'Health score saved' })
-async saveHealthScore(
-  @Param('userId') userId: string,
-  @Body() body: CreateHealthScoreDto,
-) {
-  return this.healthScoreService.saveHealthScore(userId, body); // ← Use service
-}
-
-@Get('health-score/:userId')
-@ApiOperation({ summary: 'Get all health scores for a user' })
-@ApiParam({ name: 'userId', description: 'User ID' })
-@ApiResponse({ status: 200, description: 'List of health scores' })
-async getHealthScores(@Param('userId') userId: string) {
-  return this.healthScoreService.getHealthScoresByUser(userId); // ← Use service
-}
+  @Get('health-score/:userId')
+  @ApiOperation({ summary: 'Get all health scores for a user' })
+  @ApiParam({ name: 'userId', description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'List of health scores' })
+  async getHealthScores(@Param('userId') userId: string) {
+    return this.healthScoreService.getHealthScoresByUser(userId); // ← Use service
+  }
 }

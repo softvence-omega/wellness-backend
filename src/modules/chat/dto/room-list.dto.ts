@@ -1,4 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { IsInt, IsOptional, Min } from 'class-validator';
 
 class RoomDto {
   @ApiProperty()
@@ -52,4 +54,30 @@ export class RoomListResponseDto {
 
   @ApiProperty({ type: [RoomListItemDto] })
   data!: RoomListItemDto[];
+  
+  @ApiProperty()
+  pagination!: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}
+
+export class ListRoomsQueryDto {
+  @ApiProperty({ description: 'Page number (1-based)', default: 1, minimum: 1 })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  page?: number = 1;
+
+  @ApiProperty({ description: 'Items per page', default: 20, minimum: 1, maximum: 100 })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  limit?: number = 20;
 }

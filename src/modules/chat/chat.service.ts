@@ -8,6 +8,7 @@ import { MessageType } from '@prisma/client';
 import {  SaveAiResponseResponse } from './types/ai-response.type';
 import { SaveAiResponseDto } from './dto/ai-response.dto';
 import { RoomListResponse } from './types/room-list.type';
+import { RoomListResponseDto } from './dto/room-list.dto';
 
 interface SendMessageResult {
   userMessage: any;
@@ -233,7 +234,22 @@ async sendMessage(userId: string, roomId: string, dto: SendMessageDto): Promise<
     return room;
   }
 
-async listRooms(userId: string): Promise<RoomListResponse> {
+  async listRooms(
+  userId: string,
+  params: { page: number; limit: number },
+): Promise<RoomListResponseDto> {
+  const { page = 1, limit = 20 } = params;
+  const skip = (page - 1) * limit;
+
+  // First: count total active rooms
+  const total = await this.prisma.roomMember.count({
+    where: {
+      userId,
+      leftAt: null,
+    },
+  });
+
+  // Then: fetch current page, ALWAYS sorted by lastActive DESC
   const memberships = await this.prisma.roomMember.findMany({
     where: {
       userId,
@@ -254,22 +270,24 @@ async listRooms(userId: string): Promise<RoomListResponse> {
           capacity: true,
           location: true,
           createdAt: true,
-          // Efficient chat count
           chats: {
             select: { id: true },
-            where: { type: MessageType.AI_RESPONSE }, // Only count AI responses
+            where: { type: MessageType.AI_RESPONSE },
           },
         },
       },
     },
     orderBy: {
       room: {
-        lastActive: 'desc', // Most recent first
+        lastActive: 'desc', // This guarantees: newest activity = first
       },
     },
+    skip,
+    take: limit,
   });
 
-  // Transform to clean response
+  const totalPages = Math.ceil(total / limit);
+
   return {
     success: true,
     data: memberships.map(m => ({
@@ -286,11 +304,77 @@ async listRooms(userId: string): Promise<RoomListResponse> {
         capacity: m.room.capacity ?? null,
         location: m.room.location ?? null,
         createdAt: m.room.createdAt.toISOString(),
-        chatCount: m.room.chats.length, // Direct count, no _count overhead
+        chatCount: m.room.chats.length,
       },
     })),
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasPrev: page > 1,
+      hasNext: page < totalPages,
+    },
   };
 }
+
+// async listRooms(userId: string): Promise<RoomListResponse> {
+//   const memberships = await this.prisma.roomMember.findMany({
+//     where: {
+//       userId,
+//       leftAt: null,
+//     },
+//     select: {
+//       id: true,
+//       role: true,
+//       joinedAt: true,
+//       room: {
+//         select: {
+//           id: true,
+//           name: true,
+//           aiTitle: true,
+//           maxPrompts: true,
+//           promptUsed: true,
+//           lastActive: true,
+//           capacity: true,
+//           location: true,
+//           createdAt: true,
+//           // Efficient chat count
+//           chats: {
+//             select: { id: true },
+//             where: { type: MessageType.AI_RESPONSE },
+//           },
+//         },
+//       },
+//     },
+//     orderBy: {
+//       room: {
+//         lastActive: 'desc', 
+//       },
+//     },
+//   });
+
+//   return {
+//     success: true,
+//     data: memberships.map(m => ({
+//       membershipId: m.id,
+//       role: m.role,
+//       joinedAt: m.joinedAt.toISOString(),
+//       room: {
+//         id: m.room.id,
+//         name: m.room.name,
+//         aiTitle: m.room.aiTitle ?? null,
+//         maxPrompts: m.room.maxPrompts,
+//         promptUsed: m.room.promptUsed,
+//         lastActive: m.room.lastActive?.toISOString() ?? null,
+//         capacity: m.room.capacity ?? null,
+//         location: m.room.location ?? null,
+//         createdAt: m.room.createdAt.toISOString(),
+//         chatCount: m.room.chats.length, 
+//       },
+//     })),
+//   };
+// }
 
   //=======================for ai response========
 async saveAiResponseToRoom(
