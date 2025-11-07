@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 async function setupPlans() {
   try {
-    console.log('🔄 Setting up plans...');
+    console.log(' Setting up plans...');
 
     const plans = [
       {

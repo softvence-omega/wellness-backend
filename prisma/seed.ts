@@ -34,7 +34,7 @@ async function main() {
       maxPrompts: 15,
       maxMedicalReports: 8,
       maxMealScans: 12,
-      description: 'Premium plan with unlimited access',
+      description: 'Premium plan with prompt 10',
       isActive: true,
     },
   });
@@ -44,7 +44,7 @@ async function main() {
 
 main()
   .catch((e) => {
-    console.error('❌ Seed failed:', e);
+    console.error(' Seed failed:', e);
     process.exit(1);
   })
   .finally(async () => {
