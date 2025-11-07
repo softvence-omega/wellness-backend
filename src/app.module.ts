@@ -87,6 +87,8 @@ import { LabReportFileUploadModule } from './modules/lab-report-upload/lab-repor
 import { ThrottlerModule } from '@nestjs/throttler';
 import { NotificationModule } from './modules/notifications/notification.module';
 import { ChatModule } from './modules/chat/chat.module';
+import { SubscriptionsModule } from './modules/pay/subscriptions/subscriptions.module';
+import { PaymentsModule } from './modules/pay/payments/payments.module';
 
 @Module({
   imports: [
@@ -110,6 +112,8 @@ import { ChatModule } from './modules/chat/chat.module';
     LabReportFileUploadModule,
     NotificationModule,
     ChatModule,
+    SubscriptionsModule,
+    PaymentsModule,
 
     
     BullModule.forRoot({

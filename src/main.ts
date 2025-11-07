@@ -1,6 +1,11 @@
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe, VersioningType, Logger } from '@nestjs/common';
+import {
+  ValidationPipe,
+  VersioningType,
+  Logger,
+  RawBody,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
@@ -76,7 +81,7 @@ async function bootstrap() {
 
     //adapter for WebSockets
     app.useWebSocketAdapter(new WsAdapter(app));
-    
+
     if (!configService) {
       throw new Error('ConfigService not available');
     }
@@ -184,6 +189,7 @@ async function bootstrap() {
           configService.get<string>('NODE_ENV') === 'production',
       }),
     );
+   
 
     // Global filters and interceptors
     const nestLogger = new Logger('GlobalExceptionFilter');
@@ -267,6 +273,12 @@ async function bootstrap() {
       maxAge: configService.get<number>('CORS_MAX_AGE') || 86400,
       preflightContinue: false,
       optionsSuccessStatus: 204,
+    });
+     app.use('/webhooks/stripe', async (req, res, next) => {
+      if (req.originalUrl.startsWith('/webhooks/stripe')) {
+        req['rawBody'] = await RawBody(req);
+      }
+      next();
     });
 
     // Mobile-specific middleware

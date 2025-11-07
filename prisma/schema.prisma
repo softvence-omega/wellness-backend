@@ -44,6 +44,7 @@ model User {
   notifications           Notification[]
   roomMembers            RoomMember[]
   notificationSettings    NotificationSettings?
+  userSubscription        UserSubscription?
 
   @@index([createdAt])
 }
@@ -180,7 +181,7 @@ model Notification {
 }
 
 model DeviceIntegration {
-  id                      String    @id @default(cuid()) // Changed to CUID
+  id                      String    @id @default(cuid()) 
   userId                  String    @unique // Changed to String
   appleHealth_isConnected Boolean   @default(false)
   appleHealth_lastSync    DateTime?
@@ -276,15 +277,14 @@ model SleepData {
   coreMinutes  Float?
 
   // Sleep Quality Metrics
-  sleepEfficiency Float? // Percentage of time actually asleep
-  timeInBed       Float? // Total time in bed (minutes)
-  sleepLatency    Float? // Time to fall asleep (minutes)
+  sleepEfficiency Float? 
+  timeInBed       Float? 
+  sleepLatency    Float? 
 
   // Apple Watch Specific
   bedtimeStart DateTime?
   bedtimeEnd   DateTime?
-  consistency  Float? // Sleep schedule consistency
-
+  consistency  Float? 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -298,9 +298,9 @@ model WorkoutData {
 
   // Workout Information
   workoutType   WorkoutType?
-  duration      Float? // in minutes
-  totalDistance Float? // in meters
-  totalEnergy   Float? // calories burned
+  duration      Float? 
+  totalDistance Float?
+  totalEnergy   Float? 
 
   // Heart Rate during workout
   avgHeartRate Float?
@@ -309,7 +309,7 @@ model WorkoutData {
 
   // GPS Data
   elevation Float?
-  routeData Json? // GPS coordinates
+  routeData Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -341,59 +341,6 @@ model MedicalReport {
   @@map("medical_reports")
 }
 
-// model VitalSigns {
-//   id         String             @id @default(cuid()) // Changed to CUID
-//   userId     String             @unique // Changed to String
-//   dataFrom   String
-//   additional AdditionalMetrics?
-//   heartRate  HeartRate?
-//   sleep      Sleep?
-//   step       Step?
-//   user       User               @relation(fields: [userId], references: [id])
-
-//   @@index([userId])
-// }
-
-// model HeartRate {
-//   id        String     @id @default(cuid()) // Changed to CUID
-//   vitalId   String     @unique // Changed to String
-//   heartRate Int?
-//   updatedAt DateTime   @default(now()) @updatedAt
-//   resting   Int?
-//   average   Int?
-//   peak      Int?
-//   message   Json?
-//   vital     VitalSigns @relation(fields: [vitalId], references: [id])
-
-//   @@index([vitalId])
-// }
-
-// model Step {
-//   id         String     @id @default(cuid()) // Changed to CUID
-//   vitalId    String     @unique // Changed to String
-//   stepsCount Int
-//   distance   Float?
-//   calories   Float?
-//   activeMin  Int?
-//   message    Json?
-//   vital      VitalSigns @relation(fields: [vitalId], references: [id])
-
-//   @@index([vitalId])
-// }
-
-// model Sleep {
-//   id           String     @id @default(cuid()) // Changed to CUID
-//   vitalId      String     @unique // Changed to String
-//   sleepStartAt DateTime
-//   sleepEndAt   DateTime
-//   deep         Float?
-//   rem          Float?
-//   light        Float?
-//   message      Json?
-//   vital        VitalSigns @relation(fields: [vitalId], references: [id])
-
-//   @@index([vitalId])
-// }
 
 model AdditionalMetrics {
   id                   String @id @default(cuid()) // Changed to CUID
@@ -426,7 +373,7 @@ model Meal {
 }
 
 model LabReport {
-  id         String   @id @default(cuid()) // Changed to CUID
+  id         String   @id @default(cuid()) 
   userId     String
   reportFile String
   createdAt  DateTime @default(now())
@@ -487,6 +434,63 @@ model Chat {
   @@index([conversationId])
   @@index([createdAt])
 }
+//=====================payment models=========================//
+
+model Plan {
+  id              String         @id @default(cuid())
+  name            PlanName
+  displayName     String         // e.g., "Pro Plan"
+  priceCents      Int            // e.g., 999 for $9.99 (USD)
+  currency        String         @default("usd")
+  maxPrompts      Int            // e.g., 2 for free, 10 for pro
+  maxMedicalReports Int         // e.g., 1 for free, 5 for pro
+  maxMealScans    Int            //  2 for free, 8 for pro
+  description     String?
+  isActive        Boolean        @default(true)
+  stripePriceId   String?        // For future subscriptions
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  // Relations
+  subscriptions   UserSubscription[]
+
+  @@unique([name])
+  @@index([isActive])
+}
+
+model UserSubscription {
+  id            String            @id @default(cuid())
+  userId        String            @unique
+  planId        String
+  status        SubscriptionStatus @default(FREE)
+  startDate     DateTime          @default(now())
+  endDate       DateTime?         // Null for one-time; set for subscriptions
+  usage         Json              @default("{\"promptsUsed\": 0, \"reportsUsed\": 0, \"scansUsed\": 0}") // Flexible counters
+  stripePaymentId String?         // Link to Stripe PaymentIntent ID
+  lastResetDate DateTime?         // For monthly resets if subscription
+
+  // Relations
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan          Plan              @relation(fields: [planId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([startDate])
+}
+
+enum SubscriptionStatus {
+  FREE
+  ACTIVE
+  TRIAL
+  CANCELLED
+  EXPIRED
+}
+
+enum PlanName {
+  FREE
+  PRO
+}
+
 
 enum NotificationCategory {
   SYSTEM_ALERTS
