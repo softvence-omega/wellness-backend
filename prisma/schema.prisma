@@ -8,10 +8,10 @@ datasource db {
 }
 
 model User {
-  id                      String             @id @default(cuid()) // Changed to CUID
-  email                   String             @unique
-  role                    Role               @default(USER)
-  phone                   String?            @unique
+  id                      String                @id @default(cuid()) // Changed to CUID
+  email                   String                @unique
+  role                    Role                  @default(USER)
+  phone                   String?               @unique
   password                String?
   refreshToken            String?
   fitbitAccessToken       String?
@@ -20,14 +20,14 @@ model User {
   stravaAccessToken       String?
   stravaRefreshToken      String?
   stravaAccessTokenExpiry DateTime?
-  isAgreeTerms            Boolean            @default(false)
+  isAgreeTerms            Boolean               @default(false)
   otp                     String?
   otpExpiry               DateTime?
-  isDeleted               Boolean            @default(false)
+  isDeleted               Boolean               @default(false)
   changePasswordAt        DateTime?
-  createdAt               DateTime           @default(now())
-  updatedAt               DateTime           @default(now()) @updatedAt
-  chats                   Chat[]             @relation("ChatSender")
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @default(now()) @updatedAt
+  chats                   Chat[]                @relation("ChatSender")
   conversations           Conversation[]
   deviceIntegration       DeviceIntegration?
   labReports              LabReport[]
@@ -42,70 +42,70 @@ model User {
   HealthScores            HealthScore[]
   // Relation with notifications
   notifications           Notification[]
-  roomMembers            RoomMember[]
+  roomMembers             RoomMember[]
   notificationSettings    NotificationSettings?
   userSubscription        UserSubscription?
 
   @@index([createdAt])
 }
 
-
-model HealthScore  {
-  id        String   @id @default(cuid())
-  userId    String
-  health_score     Int?
-  analysis   String?
-  date      DateTime @default(now())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+model HealthScore {
+  id           String   @id @default(cuid())
+  userId       String
+  health_score Int?
+  analysis     String?
+  date         DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([date])
 }
 
 model Room {
-  id       String   @id @default(cuid())
-  name      String   @unique
-  aiTitle   String?
-  maxPrompts  Int @default(5)
-  promptUsed Int @default(0)
+  id         String       @id @default(cuid())
+  name       String       @unique
+  aiTitle    String?
+  maxPrompts Int          @default(5)
+  promptUsed Int          @default(0)
   expiresAt  DateTime?
   lastActive DateTime?
-  members   RoomMember[]
-  chats     Chat[]
-  capacity  Int?
-  location  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  members    RoomMember[]
+  chats      Chat[]
+  capacity   Int?
+  location   String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @default(now()) @updatedAt
 
   @@index([name])
 }
 
 model RoomMember {
-  id        String   @id @default(cuid()) // Changed to CUID
-  roomId    String
-  userId    String
-  joinedAt  DateTime @default(now())
-  role      String   @default("member")
-  leftAt    DateTime?
-  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id       String    @id @default(cuid()) // Changed to CUID
+  roomId   String
+  userId   String
+  joinedAt DateTime  @default(now())
+  role     String    @default("member")
+  leftAt   DateTime?
+  room     Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([roomId, userId])
   @@index([roomId])
   @@index([userId])
 }
+
 model NotificationSettings {
-  id                   String   @id @default(cuid())
-  userId               String   @unique
-  doNotDisturb         Boolean  @default(false)
-  systemAlerts         Boolean  @default(true)
-  personalizedNudges   Boolean  @default(true)
-  wellnessNudges       Boolean  @default(true)
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-  user                 User     @relation(fields: [userId], references: [id])
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  doNotDisturb       Boolean  @default(false)
+  systemAlerts       Boolean  @default(true)
+  personalizedNudges Boolean  @default(true)
+  wellnessNudges     Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  user               User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
 }
@@ -168,20 +168,20 @@ model EmotionEntry {
 // }
 
 model Notification {
-  id        String                 @id @default(uuid())
+  id        String               @id @default(uuid())
   userId    String
   title     String
   body      Json?
   eventId   String?
   category  NotificationCategory
-  createdAt DateTime               @default(now())
+  createdAt DateTime             @default(now())
 
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model DeviceIntegration {
-  id                      String    @id @default(cuid()) 
+  id                      String    @id @default(cuid())
   userId                  String    @unique // Changed to String
   appleHealth_isConnected Boolean   @default(false)
   appleHealth_lastSync    DateTime?
@@ -277,16 +277,16 @@ model SleepData {
   coreMinutes  Float?
 
   // Sleep Quality Metrics
-  sleepEfficiency Float? 
-  timeInBed       Float? 
-  sleepLatency    Float? 
+  sleepEfficiency Float?
+  timeInBed       Float?
+  sleepLatency    Float?
 
   // Apple Watch Specific
   bedtimeStart DateTime?
   bedtimeEnd   DateTime?
-  consistency  Float? 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  consistency  Float?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@index([healthDataId])
 }
@@ -298,9 +298,9 @@ model WorkoutData {
 
   // Workout Information
   workoutType   WorkoutType?
-  duration      Float? 
+  duration      Float?
   totalDistance Float?
-  totalEnergy   Float? 
+  totalEnergy   Float?
 
   // Heart Rate during workout
   avgHeartRate Float?
@@ -341,7 +341,6 @@ model MedicalReport {
   @@map("medical_reports")
 }
 
-
 model AdditionalMetrics {
   id                   String @id @default(cuid()) // Changed to CUID
   heartRateVariability Int
@@ -356,6 +355,7 @@ model Meal {
   name        String?
   mealType    MealType?
   isCompleted Boolean   @default(false)
+  isAtDiary   Boolean   @default(false)
   description String?
   note        String?
   calories    Float?
@@ -373,7 +373,7 @@ model Meal {
 }
 
 model LabReport {
-  id         String   @id @default(cuid()) 
+  id         String   @id @default(cuid())
   userId     String
   reportFile String
   createdAt  DateTime @default(now())
@@ -418,60 +418,61 @@ model Conversation {
 }
 
 model Chat {
-  id             String       @id @default(cuid()) // Changed to CUID
+  id             String        @id @default(cuid()) // Changed to CUID
   conversationId String? // Changed to String
   senderId       String? // Changed to String
   type           MessageType?
   roomId         String?
-  Room           Room?        @relation(fields: [roomId], references: [id])
+  Room           Room?         @relation(fields: [roomId], references: [id])
   content        String?
   responseData   String?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @default(now()) @updatedAt
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @default(now()) @updatedAt
   conversation   Conversation? @relation(fields: [conversationId], references: [id])
   sender         User?         @relation("ChatSender", fields: [senderId], references: [id])
 
   @@index([conversationId])
   @@index([createdAt])
 }
+
 //=====================payment models=========================//
 
 model Plan {
-  id              String         @id @default(cuid())
-  name            PlanName
-  displayName     String         // e.g., "Pro Plan"
-  priceCents      Int            // e.g., 999 for $9.99 (USD)
-  currency        String         @default("usd")
-  maxPrompts      Int            // e.g., 2 for free, 10 for pro
-  maxMedicalReports Int         // e.g., 1 for free, 5 for pro
-  maxMealScans    Int            //  2 for free, 8 for pro
-  description     String?
-  isActive        Boolean        @default(true)
-  stripePriceId   String?        // For future subscriptions
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id                String   @id @default(cuid())
+  name              PlanName
+  displayName       String // e.g., "Pro Plan"
+  priceCents        Int // e.g., 999 for $9.99 (USD)
+  currency          String   @default("usd")
+  maxPrompts        Int // e.g., 2 for free, 10 for pro
+  maxMedicalReports Int // e.g., 1 for free, 5 for pro
+  maxMealScans      Int //  2 for free, 8 for pro
+  description       String?
+  isActive          Boolean  @default(true)
+  stripePriceId     String? // For future subscriptions
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   // Relations
-  subscriptions   UserSubscription[]
+  subscriptions UserSubscription[]
 
   @@unique([name])
   @@index([isActive])
 }
 
 model UserSubscription {
-  id            String            @id @default(cuid())
-  userId        String            @unique
-  planId        String
-  status        SubscriptionStatus @default(FREE)
-  startDate     DateTime          @default(now())
-  endDate       DateTime?         // Null for one-time; set for subscriptions
-  usage         Json              @default("{\"promptsUsed\": 0, \"reportsUsed\": 0, \"scansUsed\": 0}") // Flexible counters
-  stripePaymentId String?         // Link to Stripe PaymentIntent ID
-  lastResetDate DateTime?         // For monthly resets if subscription
+  id              String             @id @default(cuid())
+  userId          String             @unique
+  planId          String
+  status          SubscriptionStatus @default(FREE)
+  startDate       DateTime           @default(now())
+  endDate         DateTime? // Null for one-time; set for subscriptions
+  usage           Json               @default("{\"promptsUsed\": 0, \"reportsUsed\": 0, \"scansUsed\": 0}") // Flexible counters
+  stripePaymentId String? // Link to Stripe PaymentIntent ID
+  lastResetDate   DateTime? // For monthly resets if subscription
 
   // Relations
-  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan          Plan              @relation(fields: [planId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan Plan @relation(fields: [planId], references: [id])
 
   @@index([userId])
   @@index([status])
@@ -490,7 +491,6 @@ enum PlanName {
   FREE
   PRO
 }
-
 
 enum NotificationCategory {
   SYSTEM_ALERTS

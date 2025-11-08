@@ -701,11 +701,11 @@ export class MealService {
 
   async findDiary(
   userId: string,
-  date?: string,               // optional YYYY-MM-DD
+  date?: string,          
 ) {
   const context = 'MealService.findDiary';
 
-  // ---- build where -------------------------------------------------
+
   const where: Prisma.MealWhereInput = {
     userId,
     isDeleted: false,
@@ -722,14 +722,13 @@ export class MealService {
     where.time = { gte: start, lte: end };
   }
 
-  // ---- fetch -------------------------------------------------------
+
   const meals = await this.prisma.meal.findMany({
     where,
     orderBy: { time: 'asc' },
     select: this.getMealSelectFields(),
   });
 
-  // ---- group by mealType (Breakfast → Lunch → Dinner …) -------------
   const grouped = meals.reduce((acc, m) => {
     const type = m.mealType ?? 'OTHER';
     if (!acc[type]) acc[type] = [];
