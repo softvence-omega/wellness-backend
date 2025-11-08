@@ -9,6 +9,7 @@ import { UpdateMealDto } from './dto/update-meal-dto';
 import { MealType, Prisma } from '@prisma/client';
 import { CustomLogger } from 'src/logger/logger.service';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
+import { ToggleMealDto } from './dto/toggle-meal.dto';
 
 @Injectable()
 export class MealService {
@@ -693,4 +694,91 @@ export class MealService {
       userId: true,
     };
   }
+
+
+  //=========food diary===========
+
+
+  async findDiary(
+  userId: string,
+  date?: string,               // optional YYYY-MM-DD
+) {
+  const context = 'MealService.findDiary';
+
+  // ---- build where -------------------------------------------------
+  const where: Prisma.MealWhereInput = {
+    userId,
+    isDeleted: false,
+  };
+
+  if (date) {
+    const start = new Date(date);
+    if (isNaN(start.getTime())) {
+      throw new BadRequestException('Invalid date format. Use YYYY-MM-DD');
+    }
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setHours(23, 59, 59, 999);
+    where.time = { gte: start, lte: end };
+  }
+
+  // ---- fetch -------------------------------------------------------
+  const meals = await this.prisma.meal.findMany({
+    where,
+    orderBy: { time: 'asc' },
+    select: this.getMealSelectFields(),
+  });
+
+  // ---- group by mealType (Breakfast → Lunch → Dinner …) -------------
+  const grouped = meals.reduce((acc, m) => {
+    const type = m.mealType ?? 'OTHER';
+    if (!acc[type]) acc[type] = [];
+    acc[type].push(m);
+    return acc;
+  }, {} as Record<MealType, typeof meals>);
+
+  // keep enum order
+  const ordered = Object.values(MealType).reduce((acc, type) => {
+    acc[type] = grouped[type] ?? [];
+    return acc;
+  }, {} as Record<MealType, typeof meals>);
+
+  this.logger.log('Diary fetched', context, { userId, date, count: meals.length });
+  return ordered;
+}
+
+
+async toggleCompleted(
+  id: string,
+  userId: string,
+  dto?: ToggleMealDto,
+) {
+  const context = 'MealService.toggleCompleted';
+
+  if (!id?.trim()) throw new BadRequestException('Invalid meal ID');
+
+  const meal = await this.prisma.meal.findFirst({
+    where: { id: id.trim(), userId, isDeleted: false },
+    select: { id: true, isCompleted: true },
+  });
+
+  if (!meal) throw new NotFoundException('Meal not found');
+
+  const newStatus = dto?.isCompleted ?? !meal.isCompleted;
+
+  const updated = await this.prisma.meal.update({
+    where: { id: meal.id },
+    data: { isCompleted: newStatus },
+    select: this.getMealSelectFields(),
+  });
+
+  this.logger.log('Meal toggle', context, {
+    mealId: id,
+    userId,
+    old: meal.isCompleted,
+    new: newStatus,
+  });
+
+  return updated;
+}
 }

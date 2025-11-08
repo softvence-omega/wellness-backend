@@ -16,6 +16,7 @@ import {
   BadRequestException,
   UseInterceptors,
   UploadedFile,
+  Patch,
 } from '@nestjs/common';
 import { successResponse } from 'src/common/response';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -26,6 +27,7 @@ import { MealService } from './meals.service';
 import { UpdateMealDto } from './dto/update-meal-dto';
 import { MealType } from '@prisma/client';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { ToggleMealDto } from './dto/toggle-meal.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('meals') // Changed to plural for REST conventions
@@ -150,5 +152,26 @@ export class MealController {
     const userId = req.user.userId;
     const result = await this.mealService.remove(id, userId);
     return successResponse(result, 'Meal deleted successfully');
+  }
+
+  @Roles('ADMIN', 'USER')
+  @Get('diary')
+  async getDiary(@Req() req: any, @Query('date') date?: string) {
+    const userId = req.user.userId;
+    const result = await this.mealService.findDiary(userId, date);
+    return successResponse(result, 'Food diary fetched');
+  }
+
+  @Roles('ADMIN', 'USER')
+  @Patch(':id/toggle')
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  async toggle(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() dto: ToggleMealDto,
+  ) {
+    const userId = req.user.userId;
+    const result = await this.mealService.toggleCompleted(id, userId, dto);
+    return successResponse(result, 'Meal status toggled');
   }
 }
