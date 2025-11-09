@@ -73,6 +73,11 @@ export class UpdateNudgeDto {
   @IsDate()
   @Type(() => Date)
   date?: Date;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\.\d{1,2})?$/)
+  time?: string;
 }
 
 export class GetNudgesQueryDto {
@@ -93,6 +98,16 @@ export class GetNudgesQueryDto {
       'Date must be in YYYY-MM-DD format (e.g., 2025-10-25), "upcoming", or "today"',
   })
   date?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\.\d{1,2})?$/)
+  @ApiProperty({
+    description: 'Filter nudges by exact time (HH:mm:ss)',
+    example: '20:00:00',
+    required: false,
+  })
+  time?: string;
 
   @IsOptional()
   @IsBoolean()
@@ -124,4 +139,9 @@ export class DateQueryDto {
   @IsDate()
   @Type(() => Date)
   date?: Date;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\.\d{1,2})?$/)
+  time?: string;
 }

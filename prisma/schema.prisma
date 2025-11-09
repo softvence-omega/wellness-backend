@@ -211,7 +211,8 @@ model Nudge {
   isWeightImpact  Boolean?      @default(false)
   completed       Boolean       @default(false)
   unit            NudgeUnit?
-  date            DateTime      @default(now())
+  date            DateTime?      @default(now())
+  time            DateTime?    @default(now())
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @default(now()) @updatedAt
   isDeleted       Boolean       @default(false)

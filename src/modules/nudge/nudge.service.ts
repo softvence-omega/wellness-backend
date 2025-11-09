@@ -66,9 +66,23 @@ export class NudgesService {
           consumedAmount: 0,
           remainingAmount: createNudgeDto.targetAmount,
           unit: createNudgeDto.unit, // This should match Prisma's NudgeUnit enum
-          date: createNudgeDto.date
-            ? new Date(createNudgeDto.date)
+          // date: createNudgeDto.date
+          //   ? new Date(createNudgeDto.date)
+          //   : new Date(),
+          date: createNudgeDto.time
+            ? (() => {
+                const today = new Date();
+                const [h, m, s] = createNudgeDto.time.split(':');
+                today.setHours(
+                  parseInt(h, 10),
+                  parseInt(m, 10),
+                  parseInt(s.split('.')[0], 10),
+                  0,
+                );
+                return today;
+              })()
             : new Date(),
+       
           completed: false,
         },
         include: {
