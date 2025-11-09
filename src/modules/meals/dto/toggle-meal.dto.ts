@@ -10,3 +10,13 @@ export class ToggleMealDto {
   @IsBoolean()
   isCompleted?: boolean;
 }
+
+export class ToggleDiaryDto {
+  @ApiPropertyOptional({
+    description: 'Set meal in diary or not',
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isAtDiary?: boolean;
+}

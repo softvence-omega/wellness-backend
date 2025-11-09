@@ -342,20 +342,20 @@ model MedicalReport {
 }
 
 model AdditionalMetrics {
-  id                   String @id @default(cuid()) // Changed to CUID
+  id                   String @id @default(cuid()) 
   heartRateVariability Int
   bodyTemp             Float
   respiratoryRate      Int
 }
 
 model Meal {
-  id          String    @id @default(cuid()) // Changed to CUID
-  userId      String // Changed to String
+  id          String    @id @default(cuid()) 
+  userId      String 
   photo       String?
   name        String?
   mealType    MealType?
   isCompleted Boolean   @default(false)
-  isAtDiary   Boolean   @default(false)
+  isAtDiary   Boolean?   @default(false)
   description String?
   note        String?
   calories    Float?

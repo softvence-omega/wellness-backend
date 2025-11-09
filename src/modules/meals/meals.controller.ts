@@ -27,10 +27,10 @@ import { MealService } from './meals.service';
 import { UpdateMealDto } from './dto/update-meal-dto';
 import { MealType } from '@prisma/client';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ToggleMealDto } from './dto/toggle-meal.dto';
+import { ToggleDiaryDto, ToggleMealDto } from './dto/toggle-meal.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Controller('meals') // Changed to plural for REST conventions
+@Controller('meals')
 @UsePipes(
   new ValidationPipe({
     whitelist: true,
@@ -173,5 +173,35 @@ export class MealController {
     const userId = req.user.userId;
     const result = await this.mealService.toggleCompleted(id, userId, dto);
     return successResponse(result, 'Meal status toggled');
+  }
+
+  @Roles('ADMIN', 'USER')
+  @Patch(':id/diary')
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  async toggleDiaryStatus(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() dto: ToggleDiaryDto,
+  ) {
+    const userId = req.user.userId;
+    const result = await this.mealService.toggleDiaryStatus(id, userId, dto);
+    return successResponse(result, 'Diary status updated');
+  }
+
+  @Roles('ADMIN', 'USER')
+  @Get('diary/isAtDiary')
+  async getDiaryMeals(
+    @Req() req: any,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
+    @Query('mealType') mealType?: MealType,
+  ) {
+    const userId = req.user.userId;
+    const result = await this.mealService.getDiaryMeals(userId, {
+      page,
+      limit,
+      mealType,
+    });
+    return successResponse(result, 'Diary meals fetched');
   }
 }

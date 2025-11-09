@@ -9,7 +9,7 @@ import { UpdateMealDto } from './dto/update-meal-dto';
 import { MealType, Prisma } from '@prisma/client';
 import { CustomLogger } from 'src/logger/logger.service';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
-import { ToggleMealDto } from './dto/toggle-meal.dto';
+import { ToggleDiaryDto, ToggleMealDto } from './dto/toggle-meal.dto';
 
 @Injectable()
 export class MealService {
@@ -673,7 +673,6 @@ export class MealService {
     }
   }
 
-  // Helper method to consistently select fields
   private getMealSelectFields(): Prisma.MealSelect {
     return {
       id: true,
@@ -687,6 +686,7 @@ export class MealService {
       carbs: true,
       fats: true,
       time: true,
+      isAtDiary:true,
       isCompleted: true,
       isDeleted: true,
       createdAt: true,
@@ -695,39 +695,166 @@ export class MealService {
     };
   }
 
-
   //=========food diary===========
 
+  async findDiary(userId: string, date?: string) {
+    const context = 'MealService.findDiary';
 
-  async findDiary(
+    const where: Prisma.MealWhereInput = {
+      userId,
+      isDeleted: false,
+    };
+
+    if (date) {
+      const start = new Date(date);
+      if (isNaN(start.getTime())) {
+        throw new BadRequestException('Invalid date format. Use YYYY-MM-DD');
+      }
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(start);
+      end.setHours(23, 59, 59, 999);
+      where.time = { gte: start, lte: end };
+    }
+
+    const meals = await this.prisma.meal.findMany({
+      where,
+      orderBy: { time: 'asc' },
+      select: this.getMealSelectFields(),
+    });
+
+    const grouped = meals.reduce(
+      (acc, m) => {
+        const type = m.mealType ?? 'OTHER';
+        if (!acc[type]) acc[type] = [];
+        acc[type].push(m);
+        return acc;
+      },
+      {} as Record<MealType, typeof meals>,
+    );
+
+    // keep enum order
+    const ordered = Object.values(MealType).reduce(
+      (acc, type) => {
+        acc[type] = grouped[type] ?? [];
+        return acc;
+      },
+      {} as Record<MealType, typeof meals>,
+    );
+
+    this.logger.log('Diary fetched', context, {
+      userId,
+      date,
+      count: meals.length,
+    });
+    return ordered;
+  }
+
+  async toggleCompleted(id: string, userId: string, dto?: ToggleMealDto) {
+    const context = 'MealService.toggleCompleted';
+
+    if (!id?.trim()) throw new BadRequestException('Invalid meal ID');
+
+    const meal = await this.prisma.meal.findFirst({
+      where: { id: id.trim(), userId, isDeleted: false },
+      select: { id: true, isCompleted: true },
+    });
+
+    if (!meal) throw new NotFoundException('Meal not found');
+
+    const newStatus = dto?.isCompleted ?? !meal.isCompleted;
+
+    const updated = await this.prisma.meal.update({
+      where: { id: meal.id },
+      data: { isCompleted: newStatus },
+      select: this.getMealSelectFields(),
+    });
+
+    this.logger.log('Meal toggle', context, {
+      mealId: id,
+      userId,
+      old: meal.isCompleted,
+      new: newStatus,
+    });
+
+    return updated;
+  }
+
+  //============is at diary===================
+
+async toggleDiaryStatus(
+  id: string,
   userId: string,
-  date?: string,          
+  dto?: ToggleDiaryDto,
 ) {
-  const context = 'MealService.findDiary';
+  const context = 'MealService.toggleDiaryStatus';
 
+  if (!id?.trim()) throw new BadRequestException('Invalid meal ID');
+
+  const meal = await this.prisma.meal.findFirst({
+    where: { id: id.trim(), userId, isDeleted: false },
+    select: { id: true, isAtDiary: true },
+  });
+
+  if (!meal) throw new NotFoundException('Meal not found');
+
+  const newStatus = dto?.isAtDiary ?? !meal.isAtDiary;
+
+  const updated = await this.prisma.meal.update({
+    where: { id: meal.id },
+    data: { isAtDiary: newStatus },
+    select: this.getMealSelectFields(),
+  });
+
+  this.logger.log('Diary status toggled', context, {
+    mealId: id,
+    userId,
+    old: meal.isAtDiary,
+    new: newStatus,
+  });
+
+  return updated;
+}
+
+async getDiaryMeals(
+  userId: string,
+  options: {
+    page?: number;
+    limit?: number;
+    mealType?: MealType;
+  } = {},
+) {
+  const context = 'MealService.getDiaryMeals';
+
+  const page = Math.max(1, options.page ?? 1);
+  const limit = Math.min(100, Math.max(1, options.limit ?? 10));
+  const skip = (page - 1) * limit;
 
   const where: Prisma.MealWhereInput = {
     userId,
     isDeleted: false,
+    isAtDiary: true,
   };
 
-  if (date) {
-    const start = new Date(date);
-    if (isNaN(start.getTime())) {
-      throw new BadRequestException('Invalid date format. Use YYYY-MM-DD');
+  if (options.mealType) {
+    if (!Object.values(MealType).includes(options.mealType)) {
+      throw new BadRequestException(
+        `Invalid mealType. Must be one of: ${Object.values(MealType).join(', ')}`,
+      );
     }
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setHours(23, 59, 59, 999);
-    where.time = { gte: start, lte: end };
+    where.mealType = options.mealType;
   }
 
+  const [meals, total] = await Promise.all([
+    this.prisma.meal.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { time: 'desc' },
+      select: this.getMealSelectFields(),
+    }),
+    this.prisma.meal.count({ where }),
+  ]);
 
-  const meals = await this.prisma.meal.findMany({
-    where,
-    orderBy: { time: 'asc' },
-    select: this.getMealSelectFields(),
-  });
 
   const grouped = meals.reduce((acc, m) => {
     const type = m.mealType ?? 'OTHER';
@@ -736,48 +863,32 @@ export class MealService {
     return acc;
   }, {} as Record<MealType, typeof meals>);
 
-  // keep enum order
   const ordered = Object.values(MealType).reduce((acc, type) => {
     acc[type] = grouped[type] ?? [];
     return acc;
   }, {} as Record<MealType, typeof meals>);
 
-  this.logger.log('Diary fetched', context, { userId, date, count: meals.length });
-  return ordered;
-}
+  const lastPage = Math.ceil(total / limit) || 1;
 
-
-async toggleCompleted(
-  id: string,
-  userId: string,
-  dto?: ToggleMealDto,
-) {
-  const context = 'MealService.toggleCompleted';
-
-  if (!id?.trim()) throw new BadRequestException('Invalid meal ID');
-
-  const meal = await this.prisma.meal.findFirst({
-    where: { id: id.trim(), userId, isDeleted: false },
-    select: { id: true, isCompleted: true },
-  });
-
-  if (!meal) throw new NotFoundException('Meal not found');
-
-  const newStatus = dto?.isCompleted ?? !meal.isCompleted;
-
-  const updated = await this.prisma.meal.update({
-    where: { id: meal.id },
-    data: { isCompleted: newStatus },
-    select: this.getMealSelectFields(),
-  });
-
-  this.logger.log('Meal toggle', context, {
-    mealId: id,
+  this.logger.log('Diary meals fetched', context, {
     userId,
-    old: meal.isCompleted,
-    new: newStatus,
+    page,
+    limit,
+    total,
+    returned: meals.length,
+    mealType: options.mealType,
   });
 
-  return updated;
+  return {
+    data: ordered,
+    meta: {
+      total,
+      page,
+      limit,
+      lastPage,
+      hasNextPage: page < lastPage,
+      hasPrevPage: page > 1,
+    },
+  };
 }
 }
