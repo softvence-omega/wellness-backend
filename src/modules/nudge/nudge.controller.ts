@@ -41,7 +41,7 @@ export class NudgesController {
 
 
   @Post()
-  @ApiOperation({ summary: 'Create sleep record' })
+  @ApiOperation({ summary: 'Create  record' })
   @ApiResponse({ status: 201, description: 'Sleep record created successfully' })
   async (@Body() dto: SetNotificationsDto ,req) {
     if (!req.user) {
