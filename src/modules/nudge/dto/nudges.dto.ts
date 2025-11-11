@@ -37,6 +37,7 @@ export class CreateNudgeDto {
   @IsDate()
   @Type(() => Date)
   date?: Date;
+  
 }
 
 export class UpdateNudgeProgressDto {

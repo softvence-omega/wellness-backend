@@ -1,7 +1,10 @@
 import { Nudge, NudgeCategory, NudgeUnit, Tip } from '@prisma/client';
 
+
+
 export interface NudgeResponse extends Omit<Nudge, 'user' | 'userId'> {
   tips?: Tip[];
+  time: Date | null;
 }
 
 export interface TodayProgressResponse {
