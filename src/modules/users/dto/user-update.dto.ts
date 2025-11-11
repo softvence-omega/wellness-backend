@@ -52,4 +52,9 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsEnum(Language, { message: 'Language must be EN or BN' })
   language?: Language;
+
+  @IsOptional()
+  @IsString({ message: 'FCM token must be a string' })
+  fcmToken?: string;
+  
 }

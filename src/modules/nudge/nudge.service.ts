@@ -4,7 +4,7 @@ import {
   BadRequestException,
   InternalServerErrorException,
 } from '@nestjs/common';
-
+import { addHours } from 'date-fns';
 import { CreateNudgeDto } from './dto/create-nudge.dto';
 import { UpdateNudgeDto } from './dto/update-nudge.dto';
 import { UpdateNudgeProgressDto } from './dto/update-nudge-progress.dto';
@@ -33,7 +33,7 @@ export class NudgesService {
     hours: hours ?? 0,
     value: value ?? 0,
     count: 0,
-    date: new Date(),
+   date: addHours(new Date(), 1), 
   };
 
   switch (category) {
