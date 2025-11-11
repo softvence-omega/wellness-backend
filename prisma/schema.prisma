@@ -13,6 +13,7 @@ model User {
   role                    Role                  @default(USER)
   phone                   String?               @unique
   password                String?
+  fcmtoken                String?
   refreshToken            String?
   fitbitAccessToken       String?
   fitbitRefreshToken      String?
@@ -45,8 +46,60 @@ model User {
   roomMembers             RoomMember[]
   notificationSettings    NotificationSettings?
   userSubscription        UserSubscription?
+  hydration               Hydration?
+  sleep                   Sleep?
+  weight                  Weight?
+  movement                Movement?
 
   @@index([createdAt])
+}
+
+model Hydration {
+  id        String   @id @default(cuid())
+  hours     Int
+  value     Float
+  date      DateTime
+  count     Int
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Sleep {
+  id        String   @id @default(cuid())
+  hours     Int
+  value     Int
+  date      DateTime
+  count      Int
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Weight {
+  id        String   @id @default(cuid())
+  hours     Int
+  value     Int
+  date      DateTime
+  count      Int
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Movement {
+  id        String   @id @default(cuid())
+  hours     Int
+  value     Int
+  date      DateTime
+  count      Int
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model HealthScore {

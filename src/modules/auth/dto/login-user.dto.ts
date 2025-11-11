@@ -28,6 +28,17 @@ export class LoginUserDto {
   @MaxLength(100, { message: 'Password is too long' })
   @IsNotEmpty({ message: 'Password is required' })
   password: string;
+
+
+
+  @ApiPropertyOptional({
+    description: 'Firebase Cloud Messaging (FCM) token for push notifications',
+    example: 'dju3n2s_dk29skd_ajf82kdj92',
+  })
+  @IsString({ message: 'FCM token must be a string' })
+  fcmToken?: string;
+
+  
 }
 
 export class ForgotPasswordDto {
