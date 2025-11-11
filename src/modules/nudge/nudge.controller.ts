@@ -40,7 +40,7 @@ export class NudgesController {
   constructor(private readonly nudgesService: NudgesService) {}
 
 
-  @Post()
+  @Post('setNotifications')
   @ApiOperation({ summary: 'Create  record' })
   @ApiResponse({ status: 201, description: 'Sleep record created successfully' })
   async (@Body() dto: SetNotificationsDto ,req) {
