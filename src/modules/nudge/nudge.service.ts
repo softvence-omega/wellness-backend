@@ -29,13 +29,13 @@ export class NudgesService {
     async setNotificationServices(dto: SetNotificationsDto, userId: string) {
   const { hours, value, category } = dto;
 
-  const date = addMinutes(new Date(), 1);
+  // const date = addMinutes(new Date(), 1);
   const data = {
     hours: hours ?? 0,
     value: value ?? 0,
     count: 0,
-  //  date: addHours(new Date(), 1), 
-  date
+   date: addHours(new Date(), 1), 
+  
   };
 
   switch (category) {
