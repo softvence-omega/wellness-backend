@@ -501,7 +501,7 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
-
+    
     if (!user.password) {
       throw new UnauthorizedException('Account requires social login');
     }
@@ -510,7 +510,11 @@ export class AuthService {
     if (!passwordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
-
+    
+     await this.prisma.user.update({
+  where: { id: user.id },
+  data: { fcmtoken : dto.fcmToken }, 
+});
     const tokens = await this.generateTokens(user.id, user.email, user.role);
     await this.saveRefreshToken(user.id, tokens.refreshToken);
 

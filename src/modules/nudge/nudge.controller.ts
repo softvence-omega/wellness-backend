@@ -29,6 +29,8 @@ import {
 } from '@nestjs/swagger';
 import { NudgesService } from './nudge.service';
 import { GetNudgesQueryDto } from './dto/nudges.dto';
+import { SetNotificationsDto } from './dto/senatificaitons.dto';
+
 
 @ApiTags('nudges')
 @ApiBearerAuth()
@@ -36,6 +38,25 @@ import { GetNudgesQueryDto } from './dto/nudges.dto';
 @UseGuards(JwtAuthGuard)
 export class NudgesController {
   constructor(private readonly nudgesService: NudgesService) {}
+
+
+  @Post()
+  @ApiOperation({ summary: 'Create sleep record' })
+  @ApiResponse({ status: 201, description: 'Sleep record created successfully' })
+  async (@Body() dto: SetNotificationsDto ,req) {
+    if (!req.user) {
+      throw new BadRequestException(
+        'User not authenticated - req.user is undefined',
+      );
+    }
+
+    if (!req.user.userId) {
+      throw new BadRequestException(
+        `User ID is required. User object: ${JSON.stringify(req.user)}`,
+      );
+    }
+    return this.nudgesService.setNotificationServices(dto,req.user.userId);
+  }
 
   @Post()
   create(@Request() req, @Body() createNudgeDto: CreateNudgeDto) {

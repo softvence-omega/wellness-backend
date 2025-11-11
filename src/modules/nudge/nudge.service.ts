@@ -17,12 +17,91 @@ import { Nudge, NudgeCategory, Prisma } from '@prisma/client';
 import { Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { GetNudgesQueryDto } from './dto/nudges.dto';
+import { SetNotificationCategory, SetNotificationsDto } from './dto/senatificaitons.dto';
 
 @Injectable()
 export class NudgesService {
   private readonly logger = new Logger(NudgesService.name);
 
   constructor(private prisma: PrismaService) {}
+
+
+    async setNotificationServices(dto: SetNotificationsDto, userId: string) {
+  const { hours, value, category } = dto;
+
+  const data = {
+    hours: hours ?? 0,
+    value: value ?? 0,
+    count: 0,
+    date: new Date(),
+  };
+
+  switch (category) {
+    case SetNotificationCategory.HYDRATION:
+      return this.prisma.hydration.upsert({
+        where: { userId },
+        update: {
+          hours: data.hours,
+          value: data.value,
+          date: data.date,
+          count: data.count,
+        },
+        create: {
+          ...data,
+          user: { connect: { id: userId } },
+        },
+      });
+
+    case SetNotificationCategory.SLEEP:
+      return this.prisma.sleep.upsert({
+        where: { userId },
+        update: {
+          hours: data.hours,
+          value: data.value,
+          date: data.date,
+          count: data.count,
+        },
+        create: {
+          ...data,
+          user: { connect: { id: userId } },
+        },
+      });
+
+    case SetNotificationCategory.WEIGHT:
+      return this.prisma.weight.upsert({
+        where: { userId },
+        update: {
+          hours: data.hours,
+          value: data.value,
+          date: data.date,
+          count: data.count,
+        },
+        create: {
+          ...data,
+          user: { connect: { id: userId } },
+        },
+      });
+
+    case SetNotificationCategory.MOVEMENT:
+      return this.prisma.movement.upsert({
+        where: { userId },
+        update: {
+          hours: data.hours,
+          value: data.value,
+          date: data.date,
+          count: data.count,
+        },
+        create: {
+          ...data,
+          user: { connect: { id: userId } },
+        },
+      });
+
+    default:
+      throw new BadRequestException('Invalid category type');
+  }
+}
+
 
   async create(
     userId: string,
