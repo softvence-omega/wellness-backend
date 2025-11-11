@@ -89,6 +89,7 @@ import { NotificationModule } from './modules/notifications/notification.module'
 import { ChatModule } from './modules/chat/chat.module';
 import { SubscriptionsModule } from './modules/pay/subscriptions/subscriptions.module';
 import { PaymentsModule } from './modules/pay/payments/payments.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -96,6 +97,7 @@ import { PaymentsModule } from './modules/pay/payments/payments.module';
       ttl: 60,
       limit: 100,
     } as any),
+     ScheduleModule.forRoot(),
 
     AuthModule,
     UsersModule,

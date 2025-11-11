@@ -43,7 +43,7 @@ export class NudgesController {
   @Post('setNotifications')
   @ApiOperation({ summary: 'Create  record' })
   @ApiResponse({ status: 201, description: 'Sleep record created successfully' })
-  async (@Body() dto: SetNotificationsDto ,req) {
+  async (@Body() dto: SetNotificationsDto , @Request() req,) {
     if (!req.user) {
       throw new BadRequestException(
         'User not authenticated - req.user is undefined',
