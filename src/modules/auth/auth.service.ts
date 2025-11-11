@@ -511,10 +511,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
     
-     await this.prisma.user.update({
-  where: { id: user.id },
-  data: { fcmtoken : dto.fcmToken }, 
-});
+
     const tokens = await this.generateTokens(user.id, user.email, user.role);
     await this.saveRefreshToken(user.id, tokens.refreshToken);
 

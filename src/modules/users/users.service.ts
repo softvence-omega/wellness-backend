@@ -67,6 +67,13 @@ export class UsersService {
       fileUrl = uploadResult.secure_url;
     }
 
+     if(dto.fcmToken){
+           await this.prisma.user.update({
+        where: { id: isUserExist.id },
+        data: { fcmtoken : dto.fcmToken }, 
+      });
+
+     }
     const updateProfile = await this.prisma.profile.update({
       where: { userId },
       data: {
@@ -79,6 +86,7 @@ export class UsersService {
         language: dto.language,
         isEnableNotification: dto.isEnableNotification,
         photo: fileUrl,
+        
       },
     });
 

@@ -5,6 +5,7 @@ import { addHours, isBefore } from 'date-fns';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { NotificationService } from '../notifications/services/notification.service';
 import { NotificationCategory } from 'src/common/enums/notification-category.enum';
+import { NudgeCategory } from '@prisma/client';
 
 @Injectable()
 export class CronService {
@@ -59,7 +60,7 @@ async function SleepContinious(now) {
 
 
       
-      const user = await this.prisma.user.findUnique({
+      const user = await this.prisma.User.findUnique({
         where: { id: record.userId },
       });
 
@@ -68,14 +69,52 @@ async function SleepContinious(now) {
         continue;
       }
 
-      
-      await this.notificationService.sendPushNotification({
-        token: user.fcmtoken,
-        title: 'Sleep Reminder 😴',
-        body: 'It’s time to rest and recharge! Make sure you’re getting enough sleep tonight.',
-        id: user.id,
-        category: NotificationCategory.WELLNESS_NUDGES,
-      });
+
+
+const lastSleepNudge = await this.prisma.nudge.findFirst({
+  where: {
+    userId: user.id,
+    category: NudgeCategory.SLEEP,
+    isDeleted: false,
+  },
+  orderBy: {
+    createdAt: 'desc',
+  },
+  include: {
+    tips: true,
+  },
+});
+
+if (!lastSleepNudge) {
+  this.logger.warn(`No sleep record found for user ${user.id}`);
+  return;
+}
+
+// 💤 Example rule for sleep — if value >= target (like sleep goal reached)
+if (lastSleepNudge.value >= lastSleepNudge.targetAmount) {
+  await this.prisma.sleep.update({
+    where: { id: record.id },
+    data: {
+      date: newDate,
+      count: 24,
+    },
+  });
+
+  this.logger.log(
+    `User ${user.id} already reached sleep goal (${lastSleepNudge.value}/${lastSleepNudge.targetAmount}). Skipping notification.`
+  );
+  return;
+}
+
+
+        await this.notificationService.sendPushNotification({
+          token: user.fcmtoken,
+          title: 'Sleep Reminder 😴',
+          body: `It’s time to rest and recharge! (${lastSleepNudge.value} / ${lastSleepNudge.targetAmount} hrs)`,
+          id: user.id,
+          category: NotificationCategory.WELLNESS_NUDGES,
+        });
+
 
 
  
@@ -117,7 +156,7 @@ async function WeightContinious(now) {
 
 
       
-      const user = await this.prisma.user.findUnique({
+      const user = await this.prisma.User.findUnique({
         where: { id: record.userId },
       });
 
@@ -126,14 +165,51 @@ async function WeightContinious(now) {
         continue;
       }
 
+
+
+      const lastWeightNudge = await this.prisma.nudge.findFirst({
+                where: {
+                  userId: user.id,
+                  category: NudgeCategory.WEIGHT,
+                  isDeleted: false,
+                },
+                orderBy: {
+                  createdAt: 'desc',
+                },
+                include: {
+                  tips: true,
+                },
+              });
+
+              if (!lastWeightNudge) {
+                this.logger.warn(`No weight record found for user ${user.id}`);
+                return;
+              }
+
+              // ⚖️ Example rule — if goal achieved (like weight reached target)
+              if (lastWeightNudge.value === lastWeightNudge.targetAmount) {
+                await this.prisma.weight.update({
+                  where: { id: record.id },
+                  data: {
+                    date: newDate,
+                    count: 24,
+                  },
+                });
+
+                this.logger.log(
+                  `User ${user.id} already reached weight goal (${lastWeightNudge.value}/${lastWeightNudge.targetAmount}). Skipping notification.`
+                );
+                return;
+              }
+
       
-      await this.notificationService.sendPushNotification({
-        token: user.fcmtoken,
-       title: 'Weight Check Reminder ⚖️',
-       body: 'It’s time to check your weight and stay on track with your wellness goals!',
-        id: user.id,
-        category: NotificationCategory.WELLNESS_NUDGES,
-      });
+                await this.notificationService.sendPushNotification({
+                  token: user.fcmtoken,
+                  title: 'Weight Check Reminder ⚖️',
+                  body: `Check your weight progress! (${lastWeightNudge.value} / ${lastWeightNudge.targetAmount} kg)`,
+                  id: user.id,
+                  category: NotificationCategory.WELLNESS_NUDGES,
+                });
 
 
  
@@ -176,7 +252,7 @@ async function MovementContinious(now) {
 
 
       
-      const user = await this.prisma.user.findUnique({
+      const user = await this.prisma.User.findUnique({
         where: { id: record.userId },
       });
 
@@ -185,14 +261,52 @@ async function MovementContinious(now) {
         continue;
       }
 
-      
-      await this.notificationService.sendPushNotification({
-        token: user.fcmtoken,
-        title: 'Movement Reminder 🏃‍♂️',
-         body: 'Time to stretch or take a short walk! Keep your body active and energized.',
-        id: user.id,
-        category: NotificationCategory.WELLNESS_NUDGES,
-      });
+
+      const lastMovementNudge = await this.prisma.nudge.findFirst({
+  where: {
+    userId: user.id,
+    category: NudgeCategory.MOVEMENT,
+    isDeleted: false,
+  },
+  orderBy: {
+    createdAt: 'desc',
+  },
+  include: {
+    tips: true,
+  },
+});
+
+if (!lastMovementNudge) {
+  this.logger.warn(`No movement record found for user ${user.id}`);
+  return;
+}
+
+// 🏃 Example rule — if movement goal reached
+if (lastMovementNudge.value >= lastMovementNudge.targetAmount) {
+  await this.prisma.movement.update({
+    where: { id: record.id },
+    data: {
+      date: newDate,
+      count: 24,
+    },
+  });
+
+  this.logger.log(
+    `User ${user.id} already met movement goal (${lastMovementNudge.value}/${lastMovementNudge.targetAmount}). Skipping notification.`
+  );
+  return;
+}
+
+
+
+
+        await this.notificationService.sendPushNotification({
+          token: user.fcmtoken,
+          title: 'Movement Reminder 🏃‍♂️',
+          body: `Time to move! (${lastMovementNudge.value} / ${lastMovementNudge.targetAmount} steps)`,
+          id: user.id,
+          category: NotificationCategory.WELLNESS_NUDGES,
+        });
 
 
  
@@ -235,7 +349,7 @@ async function  HydrationContinious(now) {
 
 
       
-      const user = await this.prisma.user.findUnique({
+      const user = await this.prisma.User.findUnique({
         where: { id: record.userId },
       });
 
@@ -244,17 +358,59 @@ async function  HydrationContinious(now) {
         continue;
       }
 
+
+
+           const lastHydrationNudge = await this.prisma.nudge.findFirst({
+              where: {
+                userId: user.id,
+                category: 'HYDRATION',
+                isDeleted: false,
+              },
+              orderBy: {
+                createdAt: 'desc',
+              },
+              include: {
+                tips: true,
+              },
+            });
+
+            
+            if (!lastHydrationNudge) {
+              this.logger.warn(`No hydration record found for user ${user.id}`);
+              return;
+            }
+
+           
+            if (lastHydrationNudge.consumedAmount >= lastHydrationNudge.targetAmount) {
+               
+
+                await this.prisma.hydration.update({
+                  where: { id: record.id },
+                  data: {
+                    date: newDate,
+                    count: 24,
+                  },
+                });
+
+              this.logger.log(
+                `User ${user.id} already met hydration goal (${lastHydrationNudge.consumedAmount}/${lastHydrationNudge.targetAmount}). Skipping notification.`
+              );
+              return;
+            }
+
       
-      await this.notificationService.sendPushNotification({
-        token: user.fcmtoken,
-        title: 'Hydration Reminder 💧',
-        body: 'Time to drink water and stay hydrated!',
-        id: user.id,
-        category: NotificationCategory.WELLNESS_NUDGES,
-      });
+            await this.notificationService.sendPushNotification({
+          token: user.fcmtoken,
+          title: 'Hydration Reminder 💧',
+          body: `Time to drink water and stay hydrated! (${lastHydrationNudge.consumedAmount} / ${lastHydrationNudge.targetAmount} ml)`,
+          id: user.id,
+          category: NotificationCategory.WELLNESS_NUDGES,
+        });
+
 
 
  
+
     
 
       await this.prisma.hydration.update({
