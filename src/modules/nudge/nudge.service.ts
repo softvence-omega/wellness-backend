@@ -13,11 +13,14 @@ import {
   TodayProgressResponse,
   NudgeStats,
 } from './interfaces/nudge.interface';
-import { Nudge, NudgeCategory, Prisma } from '@prisma/client';
+import { Nudge, NudgeCategory, Prisma, Tip } from '@prisma/client';
 import { Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { GetNudgesQueryDto } from './dto/nudges.dto';
-import { SetNotificationCategory, SetNotificationsDto } from './dto/senatificaitons.dto';
+import {
+  SetNotificationCategory,
+  SetNotificationsDto,
+} from './dto/senatificaitons.dto';
 
 @Injectable()
 export class NudgesService {
@@ -25,196 +28,276 @@ export class NudgesService {
 
   constructor(private prisma: PrismaService) {}
 
+  async setNotificationServices(dto: SetNotificationsDto, userId: string) {
+    const { hours, value, category } = dto;
 
-    async setNotificationServices(dto: SetNotificationsDto, userId: string) {
-  const { hours, value, category } = dto;
+    const data = {
+      hours: hours ?? 0,
+      value: value ?? 0,
+      count: 0,
+      date: new Date(),
+    };
 
-  const data = {
-    hours: hours ?? 0,
-    value: value ?? 0,
-    count: 0,
-    date: new Date(),
-  };
-
-  switch (category) {
-    case SetNotificationCategory.HYDRATION:
-      return this.prisma.hydration.upsert({
-        where: { userId },
-        update: {
-          hours: data.hours,
-          value: data.value,
-          date: data.date,
-          count: data.count,
-        },
-        create: {
-          ...data,
-          user: { connect: { id: userId } },
-        },
-      });
-
-    case SetNotificationCategory.SLEEP:
-      return this.prisma.sleep.upsert({
-        where: { userId },
-        update: {
-          hours: data.hours,
-          value: data.value,
-          date: data.date,
-          count: data.count,
-        },
-        create: {
-          ...data,
-          user: { connect: { id: userId } },
-        },
-      });
-
-    case SetNotificationCategory.WEIGHT:
-      return this.prisma.weight.upsert({
-        where: { userId },
-        update: {
-          hours: data.hours,
-          value: data.value,
-          date: data.date,
-          count: data.count,
-        },
-        create: {
-          ...data,
-          user: { connect: { id: userId } },
-        },
-      });
-
-    case SetNotificationCategory.MOVEMENT:
-      return this.prisma.movement.upsert({
-        where: { userId },
-        update: {
-          hours: data.hours,
-          value: data.value,
-          date: data.date,
-          count: data.count,
-        },
-        create: {
-          ...data,
-          user: { connect: { id: userId } },
-        },
-      });
-
-    default:
-      throw new BadRequestException('Invalid category type');
-  }
-}
-
-
-  async create(
-    userId: string,
-    createNudgeDto: CreateNudgeDto,
-  ): Promise<NudgeResponse> {
-    try {
-      if (!userId) {
-        throw new BadRequestException('User ID is required');
-      }
-
-      const userExists = await this.prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true },
-      });
-
-      if (!userExists) {
-        throw new BadRequestException('User not found');
-      }
-
-      this.logger.log(`Creating nudge for user ${userId}`, {
-        category: createNudgeDto.category,
-        data: createNudgeDto,
-      });
-
-      this.logger.debug('Creating nudge with data:', {
-        userId,
-        title: createNudgeDto.title,
-        category: createNudgeDto.category,
-        targetAmount: createNudgeDto.targetAmount,
-        unit: createNudgeDto.unit,
-        date: createNudgeDto.date,
-      });
-
-      // Use Prisma's enum types directly
-      const nudge = await this.prisma.nudge.create({
-        data: {
-          userId: userId,
-          title: createNudgeDto.title,
-          category: createNudgeDto.category, // Cast to Prisma enum
-          targetAmount: createNudgeDto.targetAmount,
-          consumedAmount: 0,
-          remainingAmount: createNudgeDto.targetAmount,
-          unit: createNudgeDto.unit, // This should match Prisma's NudgeUnit enum
-          // date: createNudgeDto.date
-          //   ? new Date(createNudgeDto.date)
-          //   : new Date(),
-          date: createNudgeDto.time
-            ? (() => {
-                const today = new Date();
-                const [h, m, s] = createNudgeDto.time.split(':');
-                today.setHours(
-                  parseInt(h, 10),
-                  parseInt(m, 10),
-                  parseInt(s.split('.')[0], 10),
-                  0,
-                );
-                return today;
-              })()
-            : new Date(),
-       
-          completed: false,
-        },
-        include: {
-          tips: {
-            orderBy: { createdAt: 'desc' },
+    switch (category) {
+      case SetNotificationCategory.HYDRATION:
+        return this.prisma.hydration.upsert({
+          where: { userId },
+          update: {
+            hours: data.hours,
+            value: data.value,
+            date: data.date,
+            count: data.count,
           },
-        },
-      });
-
-      this.logger.log(`Nudge created successfully: ${nudge.id}`);
-      return this.formatNudgeResponse(nudge);
-    } catch (error) {
-      this.logger.error('Error creating nudge', {
-        error: error.message,
-        stack: error.stack,
-        userId,
-        createNudgeDto,
-      });
-
-      // Handle specific Prisma errors
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        this.logger.error('Prisma error details:', {
-          code: error.code,
-          meta: error.meta,
-          message: error.message,
+          create: {
+            ...data,
+            user: { connect: { id: userId } },
+          },
         });
 
-        switch (error.code) {
-          case 'P2002':
-            throw new BadRequestException(
-              'Nudge with similar properties already exists',
-            );
-          case 'P2003':
-            throw new BadRequestException('Invalid user reference');
-          case 'P2006':
-            throw new BadRequestException(
-              'Invalid value provided for enum field',
-            );
-          default:
-            throw new BadRequestException(`Database error: ${error.message}`);
-        }
-      }
+      case SetNotificationCategory.SLEEP:
+        return this.prisma.sleep.upsert({
+          where: { userId },
+          update: {
+            hours: data.hours,
+            value: data.value,
+            date: data.date,
+            count: data.count,
+          },
+          create: {
+            ...data,
+            user: { connect: { id: userId } },
+          },
+        });
 
-      // Re-throw if it's already a known exception
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
+      case SetNotificationCategory.WEIGHT:
+        return this.prisma.weight.upsert({
+          where: { userId },
+          update: {
+            hours: data.hours,
+            value: data.value,
+            date: data.date,
+            count: data.count,
+          },
+          create: {
+            ...data,
+            user: { connect: { id: userId } },
+          },
+        });
 
-      throw new InternalServerErrorException(
-        'Failed to create nudge: ' + error.message,
-      );
+      case SetNotificationCategory.MOVEMENT:
+        return this.prisma.movement.upsert({
+          where: { userId },
+          update: {
+            hours: data.hours,
+            value: data.value,
+            date: data.date,
+            count: data.count,
+          },
+          create: {
+            ...data,
+            user: { connect: { id: userId } },
+          },
+        });
+
+      default:
+        throw new BadRequestException('Invalid category type');
     }
   }
+
+  //====================
+
+//   private parseTimeString(timeStr: string): Date {
+//   const [h, m, s] = timeStr.split(':');
+//   const secs = parseInt(s.split('.')[0], 10);
+//   const ms = s.includes('.') ? parseInt(s.split('.')[1].padEnd(3, '0').slice(0, 3), 10) : 0;
+//   return new Date(Date.UTC(1970, 0, 1, parseInt(h, 10), parseInt(m, 10), secs, ms));
+// }
+
+// private formatTime(date: Date | null): string | null {
+//   if (!date) return null;
+//   return `${date.getUTCHours().toString().padStart(2, '0')}:${date
+//     .getUTCMinutes()
+//     .toString()
+//     .padStart(2, '0')}:${date.getUTCSeconds().toString().padStart(2, '0')}`;
+// }
+
+// === PARSE TIME: string → string ===
+private parseTimeString(timeStr: string): string {
+  const [h, m, s] = timeStr.split(':');
+  const hour = h.padStart(2, '0');
+  const minute = m.padStart(2, '0');
+  const second = s.includes('.') ? s.split('.')[0].padStart(2, '0') : s.padStart(2, '0');
+  return `${hour}:${minute}:${second}`;
+}
+
+// === FORMAT TIME: string → string ===
+private formatTime(timeStr: string | null): string | null {
+  if (!timeStr) return null;
+  return timeStr; // Already "22:00:00"
+}
+
+// === FORMAT RESPONSE ===
+private formatNudgeResponse(nudge: Nudge & { tips?: Tip[] }): NudgeResponse {
+  const { userId, time, ...rest } = nudge;
+  return {
+    ...rest,
+    time: this.formatTime(time), // ← string | null
+  };
+}
+
+// === CREATE NUDGE ===
+async create(userId: string, dto: CreateNudgeDto): Promise<NudgeResponse> {
+  if (!userId) throw new BadRequestException('User ID required');
+  const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+  if (!user) throw new BadRequestException('User not found');
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  let nudgeDate = today;
+
+  if (dto.date) {
+    const d = new Date(dto.date);
+    if (isNaN(d.getTime())) throw new BadRequestException('Invalid date');
+    nudgeDate = d;
+    nudgeDate.setHours(0, 0, 0, 0);
+  }
+
+  let nudgeTime: string | null = null;
+  if (dto.time) {
+    nudgeTime = this.parseTimeString(dto.time); 
+  }
+
+  const nudge = await this.prisma.nudge.create({
+    data: {
+      userId,
+      title: dto.title,
+      category: dto.category,
+      targetAmount: dto.targetAmount,
+      consumedAmount: 0,
+      remainingAmount: dto.targetAmount,
+      unit: dto.unit,
+      date: nudgeDate,
+      time: nudgeTime, // ← string | null → matches Prisma
+      completed: false,
+    },
+    include: { tips: { orderBy: { createdAt: 'desc' } } },
+  });
+
+  return this.formatNudgeResponse(nudge);
+}
+
+  // async create(
+  //   userId: string,
+  //   createNudgeDto: CreateNudgeDto,
+  // ): Promise<NudgeResponse> {
+  //   try {
+  //     if (!userId) {
+  //       throw new BadRequestException('User ID is required');
+  //     }
+
+  //     const userExists = await this.prisma.user.findUnique({
+  //       where: { id: userId },
+  //       select: { id: true },
+  //     });
+
+  //     if (!userExists) {
+  //       throw new BadRequestException('User not found');
+  //     }
+
+  //     this.logger.log(`Creating nudge for user ${userId}`, {
+  //       category: createNudgeDto.category,
+  //       data: createNudgeDto,
+  //     });
+
+  //     this.logger.debug('Creating nudge with data:', {
+  //       userId,
+  //       title: createNudgeDto.title,
+  //       category: createNudgeDto.category,
+  //       targetAmount: createNudgeDto.targetAmount,
+  //       unit: createNudgeDto.unit,
+  //       date: createNudgeDto.date,
+  //     });
+
+  //     // Use Prisma's enum types directly
+  //     const nudge = await this.prisma.nudge.create({
+  //       data: {
+  //         userId: userId,
+  //         title: createNudgeDto.title,
+  //         category: createNudgeDto.category, // Cast to Prisma enum
+  //         targetAmount: createNudgeDto.targetAmount,
+  //         consumedAmount: 0,
+  //         remainingAmount: createNudgeDto.targetAmount,
+  //         unit: createNudgeDto.unit, // This should match Prisma's NudgeUnit enum
+  //         // date: createNudgeDto.date
+  //         //   ? new Date(createNudgeDto.date)
+  //         //   : new Date(),
+  //         date: createNudgeDto.time
+  //           ? (() => {
+  //               const today = new Date();
+  //               const [h, m, s] = createNudgeDto.time.split(':');
+  //               today.setHours(
+  //                 parseInt(h, 10),
+  //                 parseInt(m, 10),
+  //                 parseInt(s.split('.')[0], 10),
+  //                 0,
+  //               );
+  //               return today;
+  //             })()
+  //           : new Date(),
+
+  //         completed: false,
+  //       },
+  //       include: {
+  //         tips: {
+  //           orderBy: { createdAt: 'desc' },
+  //         },
+  //       },
+  //     });
+
+  //     this.logger.log(`Nudge created successfully: ${nudge.id}`);
+  //     return this.formatNudgeResponse(nudge);
+  //   } catch (error) {
+  //     this.logger.error('Error creating nudge', {
+  //       error: error.message,
+  //       stack: error.stack,
+  //       userId,
+  //       createNudgeDto,
+  //     });
+
+  //     // Handle specific Prisma errors
+  //     if (error instanceof Prisma.PrismaClientKnownRequestError) {
+  //       this.logger.error('Prisma error details:', {
+  //         code: error.code,
+  //         meta: error.meta,
+  //         message: error.message,
+  //       });
+
+  //       switch (error.code) {
+  //         case 'P2002':
+  //           throw new BadRequestException(
+  //             'Nudge with similar properties already exists',
+  //           );
+  //         case 'P2003':
+  //           throw new BadRequestException('Invalid user reference');
+  //         case 'P2006':
+  //           throw new BadRequestException(
+  //             'Invalid value provided for enum field',
+  //           );
+  //         default:
+  //           throw new BadRequestException(`Database error: ${error.message}`);
+  //       }
+  //     }
+
+  //     // Re-throw if it's already a known exception
+  //     if (error instanceof BadRequestException) {
+  //       throw error;
+  //     }
+
+  //     throw new InternalServerErrorException(
+  //       'Failed to create nudge: ' + error.message,
+  //     );
+  //   }
+  // }
 
   // async findAll(userId: string, query: GetNudgesQueryDto): Promise<{
   //   data: NudgeResponse[];
@@ -875,8 +958,8 @@ export class NudgesService {
     }
   }
 
-  private formatNudgeResponse(nudge: Nudge & { tips?: any[] }): NudgeResponse {
-    const { userId, ...nudgeData } = nudge;
-    return nudgeData;
-  }
+  // private formatNudgeResponse(nudge: Nudge & { tips?: any[] }): NudgeResponse {
+  //   const { userId, ...nudgeData } = nudge;
+  //   return nudgeData;
+  // }
 }

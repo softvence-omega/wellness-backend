@@ -4,7 +4,7 @@ import { Nudge, NudgeCategory, NudgeUnit, Tip } from '@prisma/client';
 
 export interface NudgeResponse extends Omit<Nudge, 'user' | 'userId'> {
   tips?: Tip[];
-  time: Date | null;
+  time: string | null;
 }
 
 export interface TodayProgressResponse {
@@ -25,7 +25,7 @@ export interface PaginatedResponse<T> {
   data: T[];
   pagination: {
     page: number;
-    limit: number;
+    limit: number; 
     totalCount: number;
     totalPages: number;
     hasNext: boolean;
