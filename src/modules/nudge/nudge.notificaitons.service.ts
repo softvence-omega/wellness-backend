@@ -446,7 +446,7 @@ export class CronService {
   ) {}
 
   // Run every minute
-  @Cron('* * * * *')
+  @Cron('*/5 * * * *')
   async handleHourlyTask() {
     this.logger.log('⏰ Cron job executed every minute');
 
