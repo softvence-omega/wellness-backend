@@ -1,5 +1,11 @@
 // src/nudges/dto/create-nudge.dto.ts
-import { IsString, IsEnum, IsNumber, IsOptional, Matches } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  Matches,
+} from 'class-validator';
 import { NudgeCategory, NudgeUnit } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -9,7 +15,8 @@ export class CreateNudgeDto {
   title: string;
 
   @IsEnum(NudgeCategory, {
-    message: 'category must be one of: hydration, sleep, movement, weight, other',
+    message:
+      'category must be one of: hydration, sleep, movement, weight, other',
   })
   @ApiProperty({ enum: NudgeCategory, example: 'sleep' })
   category: NudgeCategory;
@@ -31,7 +38,6 @@ export class CreateNudgeDto {
   @IsOptional()
   @IsString()
   @Matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\.\d{1,2})?$/)
-  @ApiProperty({ example: '22:00:00', required: false })
   time?: string;
 }
 
@@ -70,7 +76,6 @@ export class CreateNudgeDto {
 //   @Type(() => Date)
 //   date?: Date;
 
-  
 //   @IsOptional()
 //   @IsString()
 //   @Matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\.\d{1,2})?$/, {

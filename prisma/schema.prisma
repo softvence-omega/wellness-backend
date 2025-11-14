@@ -600,6 +600,7 @@ enum NudgeCategory {
   SLEEP
   MOVEMENT
   WEIGHT
+  BREATHING
   OTHER
 }
 
