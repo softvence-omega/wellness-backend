@@ -38,7 +38,26 @@ import { NudgesService } from './nudge.service';
 export class NudgesController {
   constructor(private readonly nudgesService: NudgesService) {}
 
-  // CREATE NUDGE - MUST BE FIRST
+
+
+  @Post('setNotifications')
+  @ApiOperation({ summary: 'Create  record' })
+  @ApiResponse({ status: 201, description: 'Sleep record created successfully' })
+  async (@Body() dto: SetNotificationsDto , @Request() req,) {
+    if (!req.user) {
+      throw new BadRequestException(
+        'User not authenticated - req.user is undefined',
+      );
+    }
+
+    if (!req.user.userId) {
+      throw new BadRequestException(
+        `User ID is required. User object: ${JSON.stringify(req.user)}`,
+      );
+    }
+    return this.nudgesService.setNotificationServices(dto,req.user.userId);
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create a new nudge' })
   @ApiResponse({ status: 201, description: 'Nudge created successfully' })
