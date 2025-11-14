@@ -1,6 +1,3 @@
-
-
-
 // src/nudges/nudges.controller.ts
 import {
   Controller,
@@ -26,7 +23,6 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-
 
 import { CreateNudgeDto } from './dto/create-nudge.dto';
 import { UpdateNudgeDto } from './dto/update-nudge.dto';
@@ -65,26 +61,25 @@ export class NudgesController {
     return this.nudgesService.setNotificationServices(dto, userId);
   }
 
-  // @Get()
-  // async findAll(
-  //   @Request() req,
-  //   @Query() query: GetNudgesQueryDto,
-  //   @Res() res: Response,
-  // ) {
-  //   const userId = req.user?.userId || req.user?.id || req.user?.sub;
-  //   if (!userId) {
-  //     return res.status(HttpStatus.OK).json({
-  //       data: [],
-  //       message: 'User ID is missing. Please authenticate.',
-  //       totalPages: 0,
-  //       currentPage: 0,
-  //       success: false,
-  //       nextCursor: null,
-  //     });
-  //   }
-  //   const response = await this.nudgesService.findAll(userId, query);
-  //   return res.status(HttpStatus.OK).json(response);
-  // }
+ @Get()
+@ApiOperation({ summary: 'Get all nudges with filters & pagination' })
+@ApiResponse({ status: 200, description: 'Nudges retrieved' })
+async findAll(@Request() req, @Query() query: GetNudgesQueryDto) {
+  const userId = req.user?.userId || req.user?.id || req.user?.sub;
+  if (!userId) {
+    return {
+      data: [],
+      message: 'User ID is missing. Please authenticate.',
+      totalPages: 0,
+      currentPage: 0,
+      success: false,
+      nextCursor: null,
+    };
+  }
+
+  // MUST RETURN THE RESULT
+  return this.nudgesService.findAll(userId, query);
+}
 
   @Get('today-progress')
   getTodayProgress(@Request() req) {
@@ -128,7 +123,6 @@ export class NudgesController {
   }
 }
 
-
 // import {
 //   Controller,
 //   Get,
@@ -162,14 +156,12 @@ export class NudgesController {
 // import { GetNudgesQueryDto } from './dto/nudges.dto';
 // import { SetNotificationsDto } from './dto/senatificaitons.dto';
 
-
 // @ApiTags('nudges')
 // @ApiBearerAuth()
 // @Controller('nudges')
 // @UseGuards(JwtAuthGuard)
 // export class NudgesController {
 //   constructor(private readonly nudgesService: NudgesService) {}
-
 
 //   @Post()
 //   @ApiOperation({ summary: 'Create sleep record' })
